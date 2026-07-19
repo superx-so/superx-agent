@@ -4,7 +4,7 @@
   "description": "SuperX CLI - command line interface to the SuperX API for Twitter/X growth: read posts and analytics, find engaged contacts, and schedule posts and threads",
   "main": "dist/index.js",
   "bin": {
-    "superx": "./dist/index.js"
+    "superx": "dist/index.js"
   },
   "scripts": {
     "dev": "tsup --watch",
@@ -36,7 +36,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/superx-so/superx-agent.git"
+    "url": "git+https://github.com/superx-so/superx-agent.git"
   },
   "homepage": "https://docs.superx.so",
   "bugs": {
