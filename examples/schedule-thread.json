@@ -1,0 +1,11 @@
+{
+  "comment": "Thread definition consumed by a shell loop; see usage below.",
+  "usage": "ARGS=(); while IFS= read -r p; do ARGS+=(--part \"$p\"); done < <(jq -r '.parts[]' schedule-thread.json); superx scheduled:create \"${ARGS[@]}\" --at \"$(jq -r '.scheduled_for' schedule-thread.json)\"",
+  "scheduled_for": "2026-08-01T15:00:00Z",
+  "parts": [
+    "1/ Most accounts do not have a content problem. They have a distribution problem.",
+    "2/ The For You feed rewards posts that trigger replies, shares, and profile visits. Likes alone barely move the needle.",
+    "3/ So before you post, ask one question: would a stranger reply to this? If not, rewrite the hook.",
+    "4/ That single filter, applied daily, changes everything. What is the last post you replied to, and why?"
+  ]
+}

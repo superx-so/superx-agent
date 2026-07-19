@@ -1,0 +1,22 @@
+{
+  "name": "superx-agent",
+  "owner": {
+    "name": "SuperX",
+    "url": "https://superx.so"
+  },
+  "metadata": {
+    "description": "SuperX Twitter/X growth skill for AI agents: read posts and analytics, find engaged contacts, and schedule posts and threads",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "superx",
+      "description": "Twitter/X growth CLI for reading posts and analytics, finding your most engaged contacts, and creating draft or scheduled posts and threads through the SuperX API",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./"
+      ]
+    }
+  ]
+}

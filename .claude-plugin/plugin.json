@@ -1,0 +1,23 @@
+{
+  "name": "superx",
+  "version": "0.1.0",
+  "description": "Twitter/X growth CLI for reading posts and analytics, finding your most engaged contacts, and creating draft or scheduled posts and threads through the SuperX API",
+  "author": {
+    "name": "SuperX",
+    "url": "https://superx.so"
+  },
+  "homepage": "https://docs.superx.so",
+  "repository": "https://github.com/superx-so/superx-agent",
+  "license": "MIT",
+  "skills": ["./"],
+  "keywords": [
+    "superx",
+    "twitter",
+    "x",
+    "social-media",
+    "scheduling",
+    "analytics",
+    "automation",
+    "ai-agent"
+  ]
+}

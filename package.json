@@ -1,0 +1,57 @@
+{
+  "name": "superx-cli",
+  "version": "0.1.0",
+  "description": "SuperX CLI - command line interface to the SuperX API for Twitter/X growth: read posts and analytics, find engaged contacts, and schedule posts and threads",
+  "main": "dist/index.js",
+  "bin": {
+    "superx": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "start": "node ./dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "SKILL.md",
+    "PLAYBOOK.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "superx",
+    "cli",
+    "twitter",
+    "x",
+    "social-media",
+    "scheduling",
+    "analytics",
+    "automation",
+    "ai-agent",
+    "command-line"
+  ],
+  "author": "SuperX",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/superx-so/superx-agent.git"
+  },
+  "homepage": "https://docs.superx.so",
+  "bugs": {
+    "url": "https://github.com/superx-so/superx-agent/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/yargs": "^17.0.32",
+    "tsup": "^8.5.1",
+    "typescript": "^5.3.3"
+  }
+}
