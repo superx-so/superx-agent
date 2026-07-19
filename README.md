@@ -296,7 +296,7 @@ Prefer MCP over a CLI? SuperX also hosts a remote MCP server with the same tools
 claude mcp add --transport http superx https://api.superx.so/v1/mcp --header "Authorization: Bearer YOUR_API_KEY"
 ```
 
-ChatGPT and claude.ai connect with a keyed URL instead. Guide: [docs.superx.so/mcp](https://docs.superx.so/mcp)
+ChatGPT and claude.ai connect with a keyed URL instead. Guide: [docs.superx.so/mcp-server](https://docs.superx.so/mcp-server)
 
 ---
 
