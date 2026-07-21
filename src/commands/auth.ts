@@ -28,7 +28,7 @@ export async function login(argv: { key?: string }): Promise<void> {
   let key = (argv.key || "").trim();
   if (!key) {
     note("Create or copy an API key at:");
-    note("  https://app.superx.so/account?tab=developers");
+    note("  https://app.superx.so/account?tab=api");
     note("");
     key = await promptForKey();
   }

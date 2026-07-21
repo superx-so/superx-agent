@@ -83,6 +83,6 @@ export function getConfig(): ResolvedConfig {
   process.stderr.write("Not authenticated. Either:\n");
   process.stderr.write("  1. Run: superx login\n");
   process.stderr.write("  2. Or set: export SUPERX_API_KEY=sxk_...\n");
-  process.stderr.write("Create an API key at https://app.superx.so/account?tab=developers\n");
+  process.stderr.write("Create an API key at https://app.superx.so/account?tab=api\n");
   process.exit(1);
 }

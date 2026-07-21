@@ -27,7 +27,7 @@ Requires Node.js 18 or newer.
 
 ## Authentication
 
-Create an API key in the SuperX app: [app.superx.so/account?tab=developers](https://app.superx.so/account?tab=developers)
+Create an API key in the SuperX app: [app.superx.so/account?tab=api](https://app.superx.so/account?tab=api)
 
 ### Option 1: Guided login (local use)
 
