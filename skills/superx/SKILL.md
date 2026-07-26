@@ -244,6 +244,37 @@ superx scheduled:update <post-id> --clear-tags --clear-title --clear-scratchpad
 - A new `--at` alone never schedules a draft. Promotion is always explicit via `--status scheduled` (which needs a future time, provided or already set).
 - CAUTION: replacement text is a FULL replace, media included. `--text` without `--media` REMOVES any images the post carried; re-list the current `object_key`s (visible in `scheduled:list`) to keep them. Title, scratchpad, tag, and time edits never touch media.
 
+### Advanced settings (auto retweet, auto delete, auto plug, super followers)
+
+```bash
+# Explicit values on create
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
+  --auto-retweet 6 --auto-retweet-remove 4
+
+# Auto plug: reply with a template once the post hits a likes threshold
+superx plug-templates:list                        # id, text, has_media
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
+  --auto-plug <template-id> --auto-plug-threshold 50
+
+# Auto delete underperformers (delete after 8h if under 500 views)
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
+  --auto-delete 8 --auto-delete-threshold 500
+
+# Turn the user's defaults OFF for one post
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
+  --no-auto-retweet --no-auto-plug
+
+# Edit or remove on an existing post (no inheritance on update)
+superx scheduled:update <post-id> --auto-retweet 2
+superx scheduled:update <post-id> --no-auto-delete
+```
+
+- On `scheduled:create`, flags you OMIT inherit the user's Default Post Settings from the SuperX app; that is the expected behavior, not a bug. Exactly five settings inherit (auto retweet, auto delete, auto plug, auto DM, Super Followers only); other composer defaults like Bluesky cross-posting never apply to API posts. Use the `--no-*` forms to turn a default off for one post.
+- On `scheduled:update` there is no inheritance: passed flags override, omitted flags keep the post's current settings, `--no-*` removes them.
+- Hours are 1-12. `--auto-plug` needs `--auto-plug-threshold` (likes); template ids come from `plug-templates:list`, unknown ids fail with `unknown_plug_template`. `--super-followers` / `--no-super-followers` toggle Super Followers only.
+- Auto DM has no flag: it always follows the user's app defaults. If a plan limit strips it at create time, the response carries `"auto_dm_skipped": true`; relay that to the user instead of ignoring it.
+- `scheduled:list` shows the applied settings per post (`auto_retweet`, `auto_delete`, `auto_plug`, `auto_dm`, `super_followers_only`), so you can verify what a post will actually do.
+
 ### Tags
 
 ```bash

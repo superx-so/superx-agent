@@ -254,6 +254,12 @@ export class SuperXAPI {
     return (await this.request(`/scheduled-posts/${encodeURIComponent(id)}`, { method: "DELETE" })).json;
   }
 
+  // --- Plug templates ---
+
+  async listPlugTemplates(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/plug-templates", { query })).json;
+  }
+
   // --- Media ---
 
   async createMediaUpload(body: unknown): Promise<any> {

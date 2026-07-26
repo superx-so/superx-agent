@@ -16,7 +16,7 @@ import {
   signalsResumeAgent,
   signalsDeleteAgent,
 } from "./commands/signals";
-import { scheduledList, scheduledCreate, scheduledUpdate, scheduledDelete } from "./commands/scheduled";
+import { scheduledList, scheduledCreate, scheduledUpdate, scheduledDelete, plugTemplatesList } from "./commands/scheduled";
 import { mediaUpload } from "./commands/media";
 import { tagsList, tagsCreate, tagsUpdate, tagsDelete } from "./commands/tags";
 import {
@@ -62,6 +62,43 @@ const accountOption = (y: Argv) =>
     describe: "Account id (from `superx accounts`); defaults to your main account",
     type: "string",
   });
+
+/**
+ * Advanced-settings flags shared by scheduled:create and scheduled:update.
+ * On create, omitted flags inherit your Default Post Settings from the
+ * SuperX app; on update, omitted flags keep the post's current settings.
+ * The --no-* forms turn a setting off (create) or remove it (update).
+ */
+// NOTE: the numeric flags below deliberately have NO `type: "number"` —
+// yargs coerces boolean negation (--no-auto-retweet) to 0 under
+// type:"number", which the API rejects (min 1). Untyped, positive use still
+// parses as a number and --no-* yields false; applyAdvancedFlags validates
+// and coerces the values.
+const advancedSettingsOptions = (y: Argv) =>
+  y
+    .option("auto-retweet", {
+      describe: "Auto retweet the post after this many hours (1-12); --no-auto-retweet turns it off",
+    })
+    .option("auto-retweet-remove", {
+      describe: "Remove the auto retweet after this many hours (1-12); needs --auto-retweet",
+    })
+    .option("auto-delete", {
+      describe: "Auto delete the post after this many hours (1-12) if it underperforms; --no-auto-delete turns it off",
+    })
+    .option("auto-delete-threshold", {
+      describe: "Views threshold for --auto-delete: delete only below this many views (default 1000)",
+    })
+    .option("auto-plug", {
+      describe: "Plug template id (from plug-templates:list) to auto-reply with; --no-auto-plug turns it off",
+      type: "string",
+    })
+    .option("auto-plug-threshold", {
+      describe: "Likes threshold for --auto-plug: the reply posts once the post hits this many likes",
+    })
+    .option("super-followers", {
+      describe: "Post to Super Followers only (--no-super-followers turns it off)",
+      type: "boolean",
+    });
 
 yargs(hideBin(process.argv))
   .scriptName("superx")
@@ -340,7 +377,7 @@ yargs(hideBin(process.argv))
     "scheduled:create",
     "Create a draft (no --at) or scheduled post; repeat --part for a thread",
     (y: Argv) =>
-      accountOption(y)
+      advancedSettingsOptions(accountOption(y))
         .option("text", { describe: "Text for a single post", type: "string" })
         .option("part", {
           describe: "Thread part text (repeat the flag, 1-25 parts, in order)",
@@ -379,14 +416,16 @@ yargs(hideBin(process.argv))
         .example('$0 scheduled:create --text "Hello" --at "2026-08-01T15:00:00Z"', "Schedule a post")
         .example('$0 scheduled:create --part "1/ Hook" --part "2/ Detail" --part "3/ CTA"', "Draft a 3-part thread")
         .example('$0 scheduled:create --text "Hello" --title "Launch teaser" --tag abc123', "Draft with a title and a tag")
-        .example('$0 scheduled:create --text "Chart of the week" --media "<object_key>" --alt-text "Revenue chart"', "Draft with an image"),
+        .example('$0 scheduled:create --text "Chart of the week" --media "<object_key>" --alt-text "Revenue chart"', "Draft with an image")
+        .example('$0 scheduled:create --text "Hello" --at "2026-08-01T15:00:00Z" --auto-retweet 6 --auto-retweet-remove 4', "Schedule with an auto retweet")
+        .example('$0 scheduled:create --text "Hello" --at "2026-08-01T15:00:00Z" --no-auto-retweet --no-auto-plug', "Schedule with your defaults off for this post"),
     run(scheduledCreate)
   )
   .command(
     "scheduled:update <id>",
     "Edit a draft or scheduled post; only the flags you pass change",
     (y: Argv) =>
-      accountOption(y)
+      advancedSettingsOptions(accountOption(y))
         .positional("id", { describe: "Post id (from scheduled:list or scheduled:create)", type: "string" })
         .option("text", { describe: "Replacement text for a single post", type: "string" })
         .option("part", {
@@ -428,7 +467,9 @@ yargs(hideBin(process.argv))
         .option("clear-tags", { describe: "Remove all tags", type: "boolean" })
         .example('$0 scheduled:update abc123 --title "Better hook"', "Retitle a draft, everything else untouched")
         .example('$0 scheduled:update abc123 --at "2026-08-01T15:00:00Z" --status scheduled', "Promote a draft to the queue")
-        .example('$0 scheduled:update abc123 --status draft', "Pull a post back to drafts (quota refunds)"),
+        .example('$0 scheduled:update abc123 --status draft', "Pull a post back to drafts (quota refunds)")
+        .example('$0 scheduled:update abc123 --auto-delete 8 --auto-delete-threshold 500', "Add an auto delete to the post")
+        .example('$0 scheduled:update abc123 --no-auto-retweet', "Remove the post's auto retweet"),
     run(scheduledUpdate)
   )
   .command(
@@ -436,6 +477,12 @@ yargs(hideBin(process.argv))
     "Delete a draft or scheduled post by id",
     (y: Argv) => y.positional("id", { describe: "Post id (from scheduled:list or scheduled:create)", type: "string" }),
     run(scheduledDelete)
+  )
+  .command(
+    "plug-templates:list",
+    "List your auto-plug reply templates (id, text, has_media) for --auto-plug",
+    (y: Argv) => accountOption(y),
+    run(plugTemplatesList)
   )
   .command("tags:list", "List your tags (id, name, color)", {}, run(tagsList))
   .command(

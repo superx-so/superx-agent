@@ -220,6 +220,22 @@ A new `--at` time alone never schedules a draft; pass `--status scheduled` expli
 
 Write constraints in the current API version: main account only; images via `media:upload` (no video); one of `--text`, `--part`, or `--parts-json`. Idempotent replays add `"replayed": true` to the output. Note that drafts have no scheduled time, so `--from/--to` filters exclude them.
 
+### Advanced settings
+
+Auto retweet, auto delete, auto plug, and Super Followers only are available as flags on `scheduled:create` and `scheduled:update`.
+
+```bash
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" --auto-retweet 6 --auto-retweet-remove 4
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" --auto-delete 8 --auto-delete-threshold 500
+superx plug-templates:list                                   # template ids for --auto-plug
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" --auto-plug <template-id> --auto-plug-threshold 50
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" --no-auto-retweet --no-auto-plug
+superx scheduled:update <post-id> --auto-retweet 2           # override on an existing post
+superx scheduled:update <post-id> --no-auto-delete           # remove from an existing post
+```
+
+On create, flags you omit inherit your Default Post Settings from the SuperX app (exactly five settings inherit: auto retweet, auto delete, auto plug, auto DM, Super Followers only; other composer defaults like Bluesky cross-posting never apply to API posts); the `--no-*` forms turn a setting off for that post. On update there is no inheritance: passed flags override, omitted flags keep the post's current settings, `--no-*` removes them. Hours are 1-12; `--auto-plug` needs `--auto-plug-threshold` (likes). Auto DM has no flag and always follows your app defaults; if a plan limit strips it at create time the response carries `"auto_dm_skipped": true`. `scheduled:list` shows the applied settings per post.
+
 ### Tags
 
 ```bash

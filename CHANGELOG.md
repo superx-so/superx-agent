@@ -2,6 +2,7 @@
 
 ## Unreleased (joins 0.1.0)
 
+- Advanced post settings: `scheduled:create`/`scheduled:update` gain `--auto-retweet <h>` / `--auto-retweet-remove <h>` (1-12), `--auto-delete <h>` / `--auto-delete-threshold <views>`, `--auto-plug <templateId>` / `--auto-plug-threshold <likes>`, `--super-followers`, plus `--no-*` disable forms; new `plug-templates:list` command. BEHAVIOR CHANGE: posts created via the API now inherit the account's Default Post Settings (auto retweet, auto delete, auto plug, auto DM, Super Followers only) when the matching flags are omitted, exactly like posts composed in the app; previously API posts got no advanced settings at all. Auto DM stays inherit-only (no flag) and surfaces `auto_dm_skipped: true` when a plan limit strips it
 - Media: `media:upload <file>` uploads a local image (JPG/PNG/WEBP 5MB, GIF 15MB) and prints its `object_key`; `scheduled:create`/`scheduled:update` gain `--media` (comma list of keys), `--alt-text` (single key), and `--parts-json` for threads with per-part media. Text replacement on update is a full replace, media included
 - Signal agent writes: `signals:create-agent` (--name, --icp, repeatable --keyword, --precision, --list-id, --idempotency-key with replay detection), `signals:pause-agent <id>`, `signals:resume-agent <id>`, `signals:delete-agent <id>`
 

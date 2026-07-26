@@ -76,7 +76,118 @@ function parsePartsJson(raw: string): Array<{ text: string; media?: MediaItem[] 
   return parsed as Array<{ text: string; media?: MediaItem[] }>;
 }
 
-export async function scheduledCreate(argv: {
+/** Flags shared by scheduled:create and scheduled:update. The numeric flags
+ * are declared WITHOUT type:"number" in index.ts (a typed --no-* would
+ * coerce to 0), so raw values arrive as number | string | boolean; yargs
+ * types untyped options as unknown, hence the wide field types here
+ * (numericFlag narrows and validates them at runtime). */
+interface AdvancedFlagArgs {
+  "auto-retweet"?: unknown;
+  "auto-retweet-remove"?: unknown;
+  "auto-delete"?: unknown;
+  "auto-delete-threshold"?: unknown;
+  "auto-plug"?: string | boolean;
+  "auto-plug-threshold"?: unknown;
+  "super-followers"?: boolean;
+}
+
+/**
+ * Normalize a numeric advanced flag. yargs boolean negation (--no-X) yields
+ * false (passes through); positive use normally parses as a number, but a
+ * non-numeric value arrives as a string and a bare flag arrives as true —
+ * both exit with a clear message instead of sending garbage to the API.
+ */
+function numericFlag(name: string, value: unknown): number | false | undefined {
+  if (value === undefined || value === false) return value;
+  if (value === true) {
+    note(`--${name} needs a numeric value.`);
+    process.exit(1);
+  }
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) {
+    note(`--${name} must be a number.`);
+    process.exit(1);
+  }
+  return n;
+}
+
+/**
+ * Map the advanced-settings flags onto the request body.
+ *  - --auto-retweet 2            -> auto_retweet: { after_hours: 2 }
+ *  - --no-auto-retweet           -> auto_retweet: null (create: skip your
+ *    account default; update: remove it from the post)
+ *  - flag omitted                -> key omitted (create: inherit your account
+ *    defaults; update: keep the post's current setting)
+ * Same pattern for auto-delete and auto-plug. --super-followers /
+ * --no-super-followers map to super_followers_only true/false.
+ */
+function applyAdvancedFlags(argv: AdvancedFlagArgs, body: Record<string, unknown>): void {
+  const retweet = numericFlag("auto-retweet", argv["auto-retweet"]);
+  const retweetRemove = numericFlag("auto-retweet-remove", argv["auto-retweet-remove"]);
+  if (retweet === false) {
+    if (typeof retweetRemove === "number") {
+      note("--auto-retweet-remove cannot be combined with --no-auto-retweet.");
+      process.exit(1);
+    }
+    body.auto_retweet = null;
+  } else if (typeof retweet === "number") {
+    body.auto_retweet = {
+      after_hours: retweet,
+      ...(typeof retweetRemove === "number" ? { remove_after_hours: retweetRemove } : {}),
+    };
+  } else if (typeof retweetRemove === "number") {
+    note("--auto-retweet-remove requires --auto-retweet <hours>.");
+    process.exit(1);
+  }
+
+  const del = numericFlag("auto-delete", argv["auto-delete"]);
+  const delThreshold = numericFlag("auto-delete-threshold", argv["auto-delete-threshold"]);
+  if (del === false) {
+    if (typeof delThreshold === "number") {
+      note("--auto-delete-threshold cannot be combined with --no-auto-delete.");
+      process.exit(1);
+    }
+    body.auto_delete = null;
+  } else if (typeof del === "number") {
+    body.auto_delete = {
+      after_hours: del,
+      ...(typeof delThreshold === "number" ? { threshold: delThreshold } : {}),
+    };
+  } else if (typeof delThreshold === "number") {
+    note("--auto-delete-threshold requires --auto-delete <hours>.");
+    process.exit(1);
+  }
+
+  const plug = argv["auto-plug"];
+  const plugThreshold = numericFlag("auto-plug-threshold", argv["auto-plug-threshold"]);
+  if (plug === false) {
+    if (typeof plugThreshold === "number") {
+      note("--auto-plug-threshold cannot be combined with --no-auto-plug.");
+      process.exit(1);
+    }
+    body.auto_plug = null;
+  } else if (typeof plug === "string" && plug.length > 0) {
+    if (typeof plugThreshold !== "number") {
+      note("--auto-plug requires --auto-plug-threshold <likes>.");
+      process.exit(1);
+    }
+    body.auto_plug = { template_id: plug, threshold: plugThreshold };
+  } else if (typeof plugThreshold === "number") {
+    note("--auto-plug-threshold requires --auto-plug <templateId>.");
+    process.exit(1);
+  }
+
+  if (typeof argv["super-followers"] === "boolean") {
+    body.super_followers_only = argv["super-followers"];
+  }
+}
+
+export async function plugTemplatesList(argv: { account?: string }): Promise<void> {
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.listPlugTemplates({ account_id: argv.account }));
+}
+
+export async function scheduledCreate(argv: AdvancedFlagArgs & {
   text?: string;
   part?: string[];
   "parts-json"?: string;
@@ -124,6 +235,7 @@ export async function scheduledCreate(argv: {
   if (argv.scratchpad !== undefined) body.scratchpad = argv.scratchpad;
   const tags = (argv.tag || []).filter((t) => typeof t === "string" && t.length > 0);
   if (tags.length > 0) body.tags = tags;
+  applyAdvancedFlags(argv, body);
   if (argv.account) body.account_id = argv.account;
 
   const api = new SuperXAPI(getConfig());
@@ -137,7 +249,7 @@ export async function scheduledCreate(argv: {
   printJson(json);
 }
 
-export async function scheduledUpdate(argv: {
+export async function scheduledUpdate(argv: AdvancedFlagArgs & {
   id: string;
   text?: string;
   part?: string[];
@@ -203,6 +315,7 @@ export async function scheduledUpdate(argv: {
   if (argv["clear-scratchpad"]) body.scratchpad = null;
   if (tags.length > 0) body.tags = tags;
   if (argv["clear-tags"]) body.tags = [];
+  applyAdvancedFlags(argv, body);
   if (argv.account) body.account_id = argv.account;
 
   if (Object.keys(body).filter((k) => k !== "account_id").length === 0) {
