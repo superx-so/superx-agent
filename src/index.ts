@@ -30,6 +30,13 @@ import {
   articlesUnschedule,
   articlesCover,
 } from "./commands/articles";
+import {
+  contextGet,
+  contextSet,
+  contextProducts,
+  contextProductsSet,
+  contextProductsDelete,
+} from "./commands/context";
 import { docs } from "./commands/docs";
 
 /** Wrap a handler: API errors go to stderr with the API's error code, exit 1. */
@@ -483,6 +490,92 @@ yargs(hideBin(process.argv))
     "List your auto-plug reply templates (id, text, has_media) for --auto-plug",
     (y: Argv) => accountOption(y),
     run(plugTemplatesList)
+  )
+  .command(
+    "context:get",
+    "Show the account's Context settings: profile description, interests, rules, reply settings, favorite creators, style guide, products",
+    (y: Argv) => accountOption(y),
+    run(contextGet)
+  )
+  .command(
+    "context:set",
+    "Edit Context settings; only the flags you pass change (string flags: \"\" clears; lists fully replace)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("profile-description", {
+          describe: 'Who you are and what you do, grounds the AI voice (max 500 chars; "" clears)',
+          type: "string",
+        })
+        .option("profile-description-enabled", {
+          describe: "Use the profile description in AI writing (--no-profile-description-enabled turns it off)",
+          type: "boolean",
+        })
+        .option("interests", {
+          describe: 'Comma list of topics you want content about (max 30, each max 50 chars; replaces the stored list; "" clears)',
+          type: "string",
+        })
+        .option("rules", {
+          describe: 'SuperX rules the AI must follow on every surface (max 500 chars; "" clears)',
+          type: "string",
+        })
+        .option("reply-rules", {
+          describe: 'Custom instructions for AI-generated replies (max 500 chars; "" clears)',
+          type: "string",
+        })
+        .option("reply-author-name", {
+          describe: "Let AI replies address the post author by name (--no-reply-author-name turns it off)",
+          type: "boolean",
+        })
+        .option("favorite-creators", {
+          describe: 'Comma list of X usernames whose style inspires yours (max 3; replaces the stored list; "" clears)',
+          type: "string",
+        })
+        .option("own-posts-as-examples", {
+          describe: "Use your own posts as voice examples (--no-own-posts-as-examples turns it off)",
+          type: "boolean",
+        })
+        .option("style-audience", {
+          describe: 'Manual audience description that outranks the generated style guide (max 600 chars; "" reverts to generated)',
+          type: "string",
+        })
+        .option("style-vocabulary", {
+          describe: 'Manual vocabulary and style description that outranks the generated style guide (max 1000 chars; "" reverts to generated)',
+          type: "string",
+        })
+        .example('$0 context:set --rules "Never use hashtags. Keep posts under 200 chars."', "Set your SuperX rules")
+        .example('$0 context:set --interests "indie hacking,SaaS,AI agents"', "Replace your interests")
+        .example('$0 context:set --favorite-creators "levelsio,marc_louvion"', "Set favorite creators")
+        .example('$0 context:set --style-audience ""', "Revert to the generated audience description"),
+    run(contextSet)
+  )
+  .command(
+    "context:products",
+    "List the account's products (used for product mentions in generated content)",
+    (y: Argv) => accountOption(y),
+    run(contextProducts)
+  )
+  .command(
+    "context:products:set",
+    "Add or edit ONE product by --url (creates it when new, cap 5) or --id",
+    (y: Argv) =>
+      accountOption(y)
+        .option("id", { describe: "Product id (from context:products) to edit", type: "string" })
+        .option("url", { describe: "Product http(s) url; creates the product when it does not exist", type: "string" })
+        .option("name", { describe: 'Product name (max 200 chars; "" clears)', type: "string" })
+        .option("description", { describe: 'What the product is (max 1000 chars; "" clears)', type: "string" })
+        .option("positioning", { describe: 'Positioning and differentiation (max 2000 chars; "" clears)', type: "string" })
+        .option("features", { describe: 'Key features (max 2000 chars; "" clears)', type: "string" })
+        .option("updates", { describe: 'Recent updates worth mentioning (max 2000 chars; "" clears)', type: "string" })
+        .example('$0 context:products:set --url "https://superx.so" --name "SuperX" --description "X growth platform"', "Add or edit a product by url")
+        .example('$0 context:products:set --id 3 --updates "Shipped the public API"', "Update one field by id"),
+    run(contextProductsSet)
+  )
+  .command(
+    "context:products:delete <id>",
+    "Remove a product by id (reversible by re-adding the same url)",
+    (y: Argv) =>
+      accountOption(y).positional("id", { describe: "Product id (from context:products)", type: "string" }),
+    run(contextProductsDelete)
   )
   .command("tags:list", "List your tags (id, name, color)", {}, run(tagsList))
   .command(

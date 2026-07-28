@@ -1,6 +1,6 @@
 ---
 name: superx
-description: SuperX is a Twitter/X growth tool. Use it to read an account's published posts with engagement metrics, pull account analytics (impressions, likes, replies, follower change), find the people who engage with the account most, review reply history in both directions (sent and received), manage contact lists, create and manage signal agents (automated lead finders) and review the leads they discover, search a library of 50M+ high-performing posts for inspiration, create, edit, tag, or schedule draft posts and threads (with image attachments), and write, schedule, publish, and generate AI covers for long-form X Articles through the SuperX API.
+description: SuperX is a Twitter/X growth tool. Use it to read an account's published posts with engagement metrics, pull account analytics (impressions, likes, replies, follower change), find the people who engage with the account most, review reply history in both directions (sent and received), manage contact lists, create and manage signal agents (automated lead finders) and review the leads they discover, search a library of 50M+ high-performing posts for inspiration, create, edit, tag, or schedule draft posts and threads (with image attachments), write, schedule, publish, and generate AI covers for long-form X Articles, and read or update the account's Context settings (profile description, interests, SuperX rules, reply settings, favorite creators, style guide, products) that steer SuperX's AI writing, all through the SuperX API.
 homepage: https://docs.superx.so
 metadata: {"openclaw":{"emoji":"🚀","requires":{"bins":["superx"],"env":[]}}}
 ---
@@ -21,7 +21,7 @@ official website: https://superx.so
 | Property | Value |
 |----------|-------|
 | **name** | superx |
-| **description** | Twitter/X growth CLI: posts, analytics, contacts, contact lists, audience replies, signal agents and their leads, inspiration, tags, scheduling (with images), and long-form Articles via the SuperX API |
+| **description** | Twitter/X growth CLI: posts, analytics, contacts, contact lists, audience replies, signal agents and their leads, inspiration, tags, scheduling (with images), long-form Articles, and Context settings (AI writing background) via the SuperX API |
 | **allowed-tools** | Bash(superx:*) |
 
 ---
@@ -286,6 +286,36 @@ superx tags:delete <tag-id>                      # also removes it from every po
 
 Tag names are unique per workspace (409 `duplicate_name`) and capped at 40 characters. Assign tags with `scheduled:create --tag` or `scheduled:update --tag`.
 
+### Context settings (AI writing background)
+
+The Context settings are the background SuperX's AI uses when writing for the account: who the user is, what they post about, hard rules, whose style they admire, and what products they sell. Editing them changes every AI writing surface in the app.
+
+```bash
+superx context:get                        # The whole context document
+superx context:get | jq '.data.rules'     # One section
+
+# Only the flags you pass change; "" clears a string; lists fully replace
+superx context:set --rules "Never use hashtags. Keep posts under 200 chars."
+superx context:set --profile-description "Indie hacker building SuperX" --profile-description-enabled
+superx context:set --interests "indie hacking,SaaS,AI agents"          # replaces the list
+superx context:set --favorite-creators "levelsio,marc_louvion"         # max 3, replaces the list
+superx context:set --reply-rules "Be helpful, never salesy" --no-reply-author-name
+superx context:set --style-audience "Bootstrapped SaaS founders"       # outranks the generated guide
+superx context:set --style-audience ""                                 # revert to the generated guide
+
+# Products (max 5): mentioned naturally in generated content
+superx context:products
+superx context:products:set --url "https://superx.so" --name "SuperX" --description "X growth platform"
+superx context:products:set --id 3 --updates "Shipped the public API"
+superx context:products:delete <product-id>
+```
+
+- What each setting affects: `--profile-description` grounds the AI's voice and personalizes the daily content mix and search; `--rules` are mandatory instructions on EVERY AI surface; `--reply-rules` and `--reply-author-name` steer generated replies; `--favorite-creators` (X usernames, max 3) inspire the writing style; `--interests` are the highest-priority topics for content suggestions; `--style-audience`/`--style-vocabulary` outrank the app's generated style guide until cleared.
+- `context:get` also returns the read-only generated style guide (`style_guide.generated`) so you can see what a cleared override falls back to.
+- Caps: profile description 500, rules 500, reply rules 500, style audience 600, style vocabulary 1000 characters; 30 interests of 50 characters each; 3 favorite creators; 5 products.
+- `context:products:set --url` creates the product when it does not exist. Removing a product is reversible: re-adding the same url restores its scraped details.
+- Writes need a key with the write scope. Unlike scheduling, context writes work on ANY linked account via `--account` (they are per-account settings). These settings shape ALL future AI output for the account; confirm with the user before changing rules or the profile description.
+
 ### Articles (long-form X posts)
 
 Article bodies are markdown in BOTH directions: headings (h1-h3), bullet and numbered lists (one nesting level), blockquotes, bold/italic/strikethrough, links, images by URL, and bare X post URLs alone on a line as embeds. Code blocks and `---` rules degrade to plain text; the response lists degradations in `warnings`.
@@ -418,6 +448,7 @@ superx scheduled:list --status scheduled
 23. **Signal agents find leads asynchronously**: `signals:create-agent` returns the created agent, not leads. Leads land over the following minutes and days; read them with `signals:leads`.
 24. **Plan caps on agents return 403 `cap_reached`**: the plan allows only so many agents (and keyword signals per agent). Pause/delete an existing agent or ask the account owner to upgrade.
 25. **Agent creation is composite**: with an auto-created list, a mid-failure can leave an empty `Leads: ...` contact list behind (visible in `lists:list`, deletable in the app). The agent itself is never left without signals.
+26. **`context:set` list flags REPLACE the stored list**: `--interests` and `--favorite-creators` overwrite what is there; include every value the user should keep. `""` on a string flag clears it (style-guide overrides then revert to the generated guide). These settings steer all future AI output; confirm with the user before changing them.
 
 ---
 
@@ -489,6 +520,14 @@ superx articles:unschedule <id>
 superx articles:publish <id>
 superx articles:cover <id> --style "minimal"
 superx articles:delete <id>
+
+# Context settings (AI writing background)
+superx context:get
+superx context:set --rules "Never use hashtags."
+superx context:set --interests "indie hacking,SaaS"   # replaces the list
+superx context:products
+superx context:products:set --url "https://superx.so" --name "SuperX"
+superx context:products:delete <id>
 
 # Docs and help
 superx docs                                       # API quickstart (markdown)

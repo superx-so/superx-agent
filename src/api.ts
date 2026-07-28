@@ -260,6 +260,28 @@ export class SuperXAPI {
     return (await this.request("/plug-templates", { query })).json;
   }
 
+  // --- Context settings ---
+
+  async getContext(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/context", { query })).json;
+  }
+
+  async updateContext(body: unknown): Promise<any> {
+    return (await this.request("/context", { method: "PATCH", body })).json;
+  }
+
+  async updateContextProduct(idOrUrl: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/context/products/${encodeURIComponent(idOrUrl)}`, { method: "PATCH", body })
+    ).json;
+  }
+
+  async deleteContextProduct(id: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (
+      await this.request(`/context/products/${encodeURIComponent(id)}`, { method: "DELETE", query })
+    ).json;
+  }
+
   // --- Media ---
 
   async createMediaUpload(body: unknown): Promise<any> {

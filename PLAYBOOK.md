@@ -61,7 +61,7 @@ Data: `superx posts:list --sort likes --since <60d ago>` and `--sort impressions
 
 A sustainable weekly loop an agent can run:
 
-1. Confirm the 1-2 topic clusters for the week; every post should fit one.
+1. Confirm the 1-2 topic clusters for the week; every post should fit one. `superx context:get` shows the account's stated interests, hard rules, profile description, and products: drafts must respect the rules and fit the interests. If the user's focus has shifted, update it (`superx context:set --interests ...`) so every AI surface in the app follows, and get confirmation first: these settings shape ALL future AI output for the account.
 2. Pull last week's winners (`posts:list --sort likes --since ...`) and note why each worked.
 3. Plan roughly 7 posts for the week; draft them (`scheduled:create` without `--at`, with a `--title` naming the angle and a `--tag` for the week's cluster so the human can scan the batch), review, then promote the best 3 to peak times (`scheduled:update <id> --at ... --status scheduled`).
 4. Include one format experiment per week (a thread via `--part`, a longer post, or a long-form X Article via `articles:create` when a topic deserves depth: draft it, add a cover with `articles:cover`, and let the human review before `articles:publish`) so format reach is never left untested.

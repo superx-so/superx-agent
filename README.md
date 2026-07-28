@@ -6,7 +6,7 @@ npx skills add superx-so/superx-agent
 
 # SuperX CLI
 
-**Twitter/X growth CLI for developers and AI agents.** Read your posts and their metrics, pull account analytics, find the people who engage with you most, create draft or scheduled posts and threads (with image attachments), and write, schedule, and publish long-form X Articles (with AI cover generation) through the [SuperX API](https://docs.superx.so).
+**Twitter/X growth CLI for developers and AI agents.** Read your posts and their metrics, pull account analytics, find the people who engage with you most, create draft or scheduled posts and threads (with image attachments), write, schedule, and publish long-form X Articles (with AI cover generation), and read or update the Context settings that steer SuperX's AI writing through the [SuperX API](https://docs.superx.so).
 
 Two things ship in this repo:
 
@@ -247,6 +247,31 @@ superx tags:delete <tag-id>                      # also removes it from every po
 
 Tag names are unique (409 `duplicate_name` on collision) and capped at 40 characters.
 
+### Context settings (AI writing background)
+
+The Context settings are the background SuperX's AI uses when writing for the account: profile description, interests, hard rules, reply settings, favorite creators, style-guide overrides, and products. Editing them changes every AI writing surface in the app.
+
+```bash
+superx context:get                                  # the whole context document
+
+# Only the flags you pass change; "" clears a string; lists fully replace
+superx context:set --rules "Never use hashtags. Keep posts under 200 chars."
+superx context:set --profile-description "Indie hacker building SuperX" --profile-description-enabled
+superx context:set --interests "indie hacking,SaaS,AI agents"       # replaces the list
+superx context:set --favorite-creators "levelsio,marc_louvion"      # max 3, replaces the list
+superx context:set --reply-rules "Be helpful, never salesy" --no-reply-author-name
+superx context:set --style-audience "Bootstrapped SaaS founders"    # outranks the generated guide
+superx context:set --style-audience ""                              # revert to the generated guide
+
+# Products (max 5): mentioned naturally in generated content
+superx context:products
+superx context:products:set --url "https://superx.so" --name "SuperX" --description "X growth platform"
+superx context:products:set --id 3 --updates "Shipped the public API"
+superx context:products:delete <product-id>
+```
+
+Caps: profile description, rules, and reply rules 500 characters; style audience 600; style vocabulary 1000; 30 interests of 50 characters each; 3 favorite creators; 5 products. `context:get` also returns the read-only generated style guide (`style_guide.generated`). `context:products:set --url` creates the product when it does not exist; removing a product is reversible by re-adding the same url. Writes need a key with the write scope.
+
 ### Articles (long-form X posts)
 
 Article bodies are **markdown in both directions**: headings (h1-h3), bullet and numbered lists (one nesting level), blockquotes, bold/italic/strikethrough, links, images by URL, and bare X post URLs as embeds. Code blocks and horizontal rules are not supported by the X Articles format and degrade to plain text (the response lists any degradations in `warnings`).
@@ -358,6 +383,10 @@ The CLI talks to these SuperX API endpoints (base `https://api.superx.so/v1`):
 | `/articles/:id/schedule` | POST | `articles:schedule <id>` |
 | `/articles/:id/unschedule` | POST | `articles:unschedule <id>` |
 | `/articles/:id/cover` | POST | `articles:cover <id>` |
+| `/context` | GET | `context:get`, `context:products` |
+| `/context` | PATCH | `context:set` |
+| `/context/products/:id` | PATCH | `context:products:set` |
+| `/context/products/:id` | DELETE | `context:products:delete <id>` |
 | `/docs` | GET | `docs` (no auth) |
 
 Full API reference: [docs.superx.so](https://docs.superx.so)
@@ -432,6 +461,7 @@ src/
     ├── media.ts      # media:upload
     ├── scheduled.ts  # scheduled:list / scheduled:create / scheduled:update / scheduled:delete
     ├── tags.ts       # tags:list / tags:create / tags:update / tags:delete
+    ├── context.ts    # context:get / context:set / context:products / context:products:set / context:products:delete
     ├── articles.ts   # articles:list/get/create/update/delete/publish/schedule/unschedule/cover
     └── docs.ts       # docs
 ```
@@ -493,6 +523,14 @@ superx tags:list
 superx tags:create "Launch week" --color amber
 superx tags:update <id> --name "Launch"
 superx tags:delete <id>
+
+# Context settings (AI writing background)
+superx context:get
+superx context:set --rules "Never use hashtags."
+superx context:set --interests "indie hacking,SaaS"   # replaces the list
+superx context:products
+superx context:products:set --url "https://superx.so" --name "SuperX"
+superx context:products:delete <id>
 
 # Articles (markdown bodies; publish needs X Premium)
 superx articles:create --title "My article" --file draft.md
