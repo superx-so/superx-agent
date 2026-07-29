@@ -37,6 +37,7 @@ import {
   contextProductsSet,
   contextProductsDelete,
 } from "./commands/context";
+import { queueGet, queueSet } from "./commands/queue";
 import { docs } from "./commands/docs";
 
 /** Wrap a handler: API errors go to stderr with the API's error code, exit 1. */
@@ -576,6 +577,37 @@ yargs(hideBin(process.argv))
     (y: Argv) =>
       accountOption(y).positional("id", { describe: "Product id (from context:products)", type: "string" }),
     run(contextProductsDelete)
+  )
+  .command(
+    "queue:get",
+    "Show the account's posting schedule: predefined time slots and the timezone they run in",
+    (y: Argv) => accountOption(y),
+    run(queueGet)
+  )
+  .command(
+    "queue:set",
+    "Change the posting schedule; changing the slots also re-flows queued posts onto them",
+    (y: Argv) =>
+      accountOption(y)
+        .option("slots-json", {
+          describe:
+            'JSON array of slots, e.g. \'[{"time":"09:00","days":[1,3,5]}]\' (0 = Sunday; max 50, one entry per time; replaces the stored slots; \'[]\' clears them)',
+          type: "string",
+        })
+        .option("timezone", {
+          describe: 'IANA timezone the slot times run in, e.g. "Europe/London" (changing only this never moves queued posts)',
+          type: "string",
+        })
+        .example(
+          `$0 queue:set --slots-json '[{"time":"09:00","days":[1,2,3,4,5]},{"time":"17:30","days":[1,3,5]}]'`,
+          "Replace the posting slots and re-flow the queue"
+        )
+        .example('$0 queue:set --timezone "Europe/London"', "Change the posting timezone without moving posts")
+        .example(`$0 queue:set --slots-json '[]'`, "Clear every predefined slot")
+        .epilogue(
+          "Changing the timezone and the slots in one call usually moves nothing, because the existing posts were placed under the old timezone; to re-flow them, change the timezone first, then send the slots in a second call."
+        ),
+    run(queueSet)
   )
   .command("tags:list", "List your tags (id, name, color)", {}, run(tagsList))
   .command(

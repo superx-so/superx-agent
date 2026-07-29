@@ -103,7 +103,7 @@ superx me         # Key owner, plan tier, key name and scopes
 superx accounts   # X accounts this key can read; use ids with --account
 ```
 
-Reads accept `--account <id>` to select a linked account. Omitting it means the main account.
+Reads accept `--account <id>` to select a linked or shared account. Omitting it means the main account.
 
 ### Posts and analytics
 
@@ -314,7 +314,27 @@ superx context:products:delete <product-id>
 - `context:get` also returns the read-only generated style guide (`style_guide.generated`) so you can see what a cleared override falls back to.
 - Caps: profile description 500, rules 500, reply rules 500, style audience 600, style vocabulary 1000 characters; 30 interests of 50 characters each; 3 favorite creators; 5 products.
 - `context:products:set --url` creates the product when it does not exist. Removing a product is reversible: re-adding the same url restores its scraped details.
-- Writes need a key with the write scope. Unlike scheduling, context writes work on ANY linked account via `--account` (they are per-account settings). These settings shape ALL future AI output for the account; confirm with the user before changing rules or the profile description.
+- Writes need a key with the write scope. Unlike scheduling, context writes work on ANY linked or shared account via `--account` (they are per-account settings). On a share with Editor permission they return 403 `editor_restricted`: only the account owner can change these. These settings shape ALL future AI output for the account; confirm with the user before changing rules or the profile description.
+
+### Queue settings (posting schedule)
+
+The posting schedule is the set of predefined time slots the queue fills, plus the timezone they run in.
+
+```bash
+superx queue:get                                       # slots, timezone, is_default flags
+
+# Slots are JSON so weekday sets stay unambiguous; 0 = Sunday
+superx queue:set --slots-json '[{"time":"09:00","days":[1,2,3,4,5]},{"time":"17:30","days":[1,3,5]}]'
+superx queue:set --timezone "Europe/London"            # never moves queued posts
+superx queue:set --slots-json '[]'                     # clear every predefined slot
+```
+
+- `--slots-json` is a FULL REPLACE: max 50 entries, one per unique time, each with at least one weekday. Send the complete set the user should end up with.
+- Changing the slots also re-flows the queue the way the app does: a queued post sitting exactly on an old slot moves to the matching new slot (Nth old occurrence to Nth new occurrence), so gaps are preserved and hand-picked custom times stay put. Read `reflow.moved` in the response to see how many posts moved.
+- `reflow.bailed: true` means the settings were saved but the queue was deliberately left alone (a post had nowhere to land, or the move set was too large). Rerunning the same command is safe.
+- A timezone-only change never moves posts. Changing the timezone and the slots in one call usually moves nothing, because the existing posts were placed under the old timezone; to re-flow them, change the timezone first, then send the slots in a second call.
+- `slots_are_default` / `timezone_is_default` mark values the account has never set; SuperX is using its own default.
+- Writes need a key with the write scope and work on any linked or shared account via `--account`, Editor-permission shares included (running the queue is exactly what a delegate is there for).
 
 ### Articles (long-form X posts)
 
@@ -426,7 +446,7 @@ superx scheduled:list --status scheduled
 1. **Naive timestamps are rejected (400)**. Always include `Z` or an offset: `2026-08-01T15:00:00Z`, not `2026-08-01T15:00:00`.
 2. **Schedule window**: `--at` must be at least 60 seconds in the future and within 18 months.
 3. **Read-only keys cannot write**: `scheduled:create`/`scheduled:delete` with a read-only key returns 403 `insufficient_scope`. Check `superx me` for the key's scopes.
-4. **Writes are main-account-only**: passing a linked account to `scheduled:create` returns 403 `writes_main_account_only`. Reads accept any owned account.
+4. **Writes are main-account-only**: passing a linked or shared account to `scheduled:create` returns 403 `writes_main_account_only`. Reads accept any account `superx accounts` lists. The exceptions are `context:*` and `queue:set`, which are per-account settings.
 5. **Images need an upload first**: `--media` takes `object_key`s from `media:upload`, never file paths or URLs. Unknown keys return 400 `invalid_media`; a presign whose bytes were never PUT returns 400 `media_not_uploaded`. Video is not supported.
 6. **Size caps**: max 25 thread parts, 25,000 characters total.
 7. **Rate limited (429)**: `rate_limited` on stderr with a retry delay. Back off; do not hammer.
@@ -449,6 +469,8 @@ superx scheduled:list --status scheduled
 24. **Plan caps on agents return 403 `cap_reached`**: the plan allows only so many agents (and keyword signals per agent). Pause/delete an existing agent or ask the account owner to upgrade.
 25. **Agent creation is composite**: with an auto-created list, a mid-failure can leave an empty `Leads: ...` contact list behind (visible in `lists:list`, deletable in the app). The agent itself is never left without signals.
 26. **`context:set` list flags REPLACE the stored list**: `--interests` and `--favorite-creators` overwrite what is there; include every value the user should keep. `""` on a string flag clears it (style-guide overrides then revert to the generated guide). These settings steer all future AI output; confirm with the user before changing them.
+27. **`queue:set --slots-json` REPLACES the whole schedule** and re-flows queued posts onto the new slots. Read the current slots with `queue:get` first and send the full set. `'[]'` clears every slot and leaves the queue all-custom. `reflow.bailed: true` means the settings saved but no post moved.
+28. **`editor_restricted` (403)**: the account is shared with the key owner with Editor permission. Editors can change queue settings but not context settings. Only the account owner can.
 
 ---
 
@@ -528,6 +550,11 @@ superx context:set --interests "indie hacking,SaaS"   # replaces the list
 superx context:products
 superx context:products:set --url "https://superx.so" --name "SuperX"
 superx context:products:delete <id>
+
+# Queue settings (posting schedule; 0 = Sunday)
+superx queue:get
+superx queue:set --slots-json '[{"time":"09:00","days":[1,3,5]}]'   # replaces the slots
+superx queue:set --timezone "Europe/London"                          # never moves posts
 
 # Docs and help
 superx docs                                       # API quickstart (markdown)

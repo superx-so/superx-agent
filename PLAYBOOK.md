@@ -34,7 +34,7 @@ A good post can go from a handful of follower likes to thousands of stranger vie
 - Reply early under larger accounts in the niche with something additive (a fact, a sharp take, a smart follow-up). Never "great post" filler.
 - Time the first window: schedule the best post of the day for when the audience is active, then protect the first 30 to 60 minutes by replying to every response fast. Early engagement compounds.
 
-Actions: `superx scheduled:create --at` for peak-time scheduling; `superx replies:list` to confirm the account is actually participating in conversations, not just broadcasting.
+Actions: `superx scheduled:create --at` for peak-time scheduling; `superx queue:get` to see the account's standing posting slots and `superx queue:set --slots-json ...` to move that cadence onto the hours the audience is actually awake (queued posts follow the slots automatically); `superx replies:list` to confirm the account is actually participating in conversations, not just broadcasting.
 
 ## 4. The engagement loop (3-3-3)
 

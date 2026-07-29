@@ -282,6 +282,16 @@ export class SuperXAPI {
     ).json;
   }
 
+  // --- Queue settings ---
+
+  async getQueueSettings(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/queue-settings", { query })).json;
+  }
+
+  async updateQueueSettings(body: unknown): Promise<any> {
+    return (await this.request("/queue-settings", { method: "PATCH", body })).json;
+  }
+
   // --- Media ---
 
   async createMediaUpload(body: unknown): Promise<any> {

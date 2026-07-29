@@ -6,6 +6,8 @@
 - Media: `media:upload <file>` uploads a local image (JPG/PNG/WEBP 5MB, GIF 15MB) and prints its `object_key`; `scheduled:create`/`scheduled:update` gain `--media` (comma list of keys), `--alt-text` (single key), and `--parts-json` for threads with per-part media. Text replacement on update is a full replace, media included
 - Signal agent writes: `signals:create-agent` (--name, --icp, repeatable --keyword, --precision, --list-id, --idempotency-key with replay detection), `signals:pause-agent <id>`, `signals:resume-agent <id>`, `signals:delete-agent <id>`
 - Context settings: `context:get` (the account's AI writing background: profile description, interests, SuperX rules, reply settings, favorite creators, style guide, products), `context:set` (present flags only change; `""` clears a string; `--interests`/`--favorite-creators` comma lists fully replace; boolean flags support `--no-*`), `context:products`, `context:products:set` (upsert by `--url` or edit by `--id`), `context:products:delete <id>`
+- Queue settings: `queue:get` (the account's posting schedule: predefined time slots and their timezone) and `queue:set` (`--slots-json` full replace, max 50, 0 = Sunday, `'[]'` clears; `--timezone` IANA name). Changing the slots also re-flows queued posts onto them the way the app does, reported as `reflow: { moved, skipped, bailed }`; a timezone-only change never moves posts
+- Shared accounts: `accounts` now lists accounts shared with you (manual and team shares) alongside your own, each with `shared` and `permission`. `--account` accepts them everywhere, and `context:*` / `queue:set` can write to them. A share with Editor permission can change queue settings but gets 403 `editor_restricted` on context writes
 
 ## 0.1.0 (2026-07-06)
 

@@ -80,7 +80,7 @@ superx me         # Key owner, plan tier, key name and scopes
 superx accounts   # X accounts this key can read (main account first)
 ```
 
-Read commands accept `--account <id>` (an id from `superx accounts`) to select a linked account. Omitting it means the main account.
+Read commands accept `--account <id>` (an id from `superx accounts`) to select a linked or shared account. Omitting it means the main account.
 
 ### Posts
 
@@ -270,7 +270,22 @@ superx context:products:set --id 3 --updates "Shipped the public API"
 superx context:products:delete <product-id>
 ```
 
-Caps: profile description, rules, and reply rules 500 characters; style audience 600; style vocabulary 1000; 30 interests of 50 characters each; 3 favorite creators; 5 products. `context:get` also returns the read-only generated style guide (`style_guide.generated`). `context:products:set --url` creates the product when it does not exist; removing a product is reversible by re-adding the same url. Writes need a key with the write scope.
+Caps: profile description, rules, and reply rules 500 characters; style audience 600; style vocabulary 1000; 30 interests of 50 characters each; 3 favorite creators; 5 products. `context:get` also returns the read-only generated style guide (`style_guide.generated`). `context:products:set --url` creates the product when it does not exist; removing a product is reversible by re-adding the same url. Writes need a key with the write scope, work on any linked or shared account via `--account`, and return 403 `editor_restricted` on a share with Editor permission.
+
+### Queue settings (posting schedule)
+
+The posting schedule is the set of predefined time slots the queue fills, plus the timezone they run in: the Edit Queue modal in the app.
+
+```bash
+superx queue:get                                     # slots, timezone, and the is_default flags
+
+# Slots are JSON so weekday sets stay unambiguous; 0 = Sunday
+superx queue:set --slots-json '[{"time":"09:00","days":[1,2,3,4,5]},{"time":"17:30","days":[1,3,5]}]'
+superx queue:set --timezone "Europe/London"          # never moves queued posts
+superx queue:set --slots-json '[]'                   # clear every predefined slot
+```
+
+Slots are a full replace, max 50, one entry per unique time. Changing them also re-flows the queue the way the app does: a queued post sitting exactly on an old slot moves to the matching new slot, so gaps are preserved and hand-picked custom times stay put. The response carries `reflow: { moved, skipped, bailed }`; `bailed: true` means the settings were saved but the queue was left untouched on purpose, and rerunning the same command is safe. Changing the timezone and the slots in one call usually moves nothing, because the existing posts were placed under the old timezone; to re-flow them, change the timezone first, then send the slots in a second call. Writes need a key with the write scope and work on any linked or shared account via `--account`, Editor-permission shares included.
 
 ### Articles (long-form X posts)
 
@@ -387,6 +402,8 @@ The CLI talks to these SuperX API endpoints (base `https://api.superx.so/v1`):
 | `/context` | PATCH | `context:set` |
 | `/context/products/:id` | PATCH | `context:products:set` |
 | `/context/products/:id` | DELETE | `context:products:delete <id>` |
+| `/queue-settings` | GET | `queue:get` |
+| `/queue-settings` | PATCH | `queue:set` |
 | `/docs` | GET | `docs` (no auth) |
 
 Full API reference: [docs.superx.so](https://docs.superx.so)
@@ -412,7 +429,8 @@ Exit code `0` = success, `1` = error. Error codes come straight from the API:
 |------|---------|
 | `invalid_api_key` (401) | Bad or revoked key; run `superx login` again |
 | `insufficient_scope` (403) | Read-only key used for a write |
-| `writes_main_account_only` (403) | `scheduled:create` with a linked account |
+| `writes_main_account_only` (403) | `scheduled:create` with a linked or shared account |
+| `editor_restricted` (403) | `context:set` or `context:products:*` on a share with Editor permission |
 | `subscription_required` (403) | SuperX subscription lapsed |
 | `account_not_found` (404) | `--account` id is not one of your accounts |
 | `list_not_found` (404) | List id is not one of your contact lists |
@@ -462,6 +480,7 @@ src/
     ├── scheduled.ts  # scheduled:list / scheduled:create / scheduled:update / scheduled:delete
     ├── tags.ts       # tags:list / tags:create / tags:update / tags:delete
     ├── context.ts    # context:get / context:set / context:products / context:products:set / context:products:delete
+    ├── queue.ts      # queue:get / queue:set
     ├── articles.ts   # articles:list/get/create/update/delete/publish/schedule/unschedule/cover
     └── docs.ts       # docs
 ```
@@ -531,6 +550,11 @@ superx context:set --interests "indie hacking,SaaS"   # replaces the list
 superx context:products
 superx context:products:set --url "https://superx.so" --name "SuperX"
 superx context:products:delete <id>
+
+# Queue settings (posting schedule; 0 = Sunday)
+superx queue:get
+superx queue:set --slots-json '[{"time":"09:00","days":[1,3,5]}]'   # replaces the slots
+superx queue:set --timezone "Europe/London"                          # never moves posts
 
 # Articles (markdown bodies; publish needs X Premium)
 superx articles:create --title "My article" --file draft.md
