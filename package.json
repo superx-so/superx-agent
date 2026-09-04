@@ -1,6 +1,6 @@
 {
   "name": "superx-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SuperX CLI - command line interface to the SuperX API for Twitter/X growth: read posts and analytics, find engaged contacts, and schedule posts and threads",
   "main": "dist/index.js",
   "bin": {
