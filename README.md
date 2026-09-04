@@ -80,7 +80,7 @@ superx me         # Key owner, plan tier, key name and scopes
 superx accounts   # X accounts this key can read (main account first)
 ```
 
-Read commands accept `--account <id>` (an id from `superx accounts`) to select a linked or shared account. Omitting it means the main account.
+Read commands accept `--account <id>` (an id from `superx accounts`) to select a linked or shared account. Write commands accept it too for your main or linked accounts; accounts shared with you by other people are read-only (403 `writes_main_account_only`). Omitting it means the main account.
 
 ### Posts
 
@@ -142,7 +142,7 @@ superx lists:add-member <list-id> --handle levelsio  # or --x-user-id 44196397
 superx lists:remove-member <list-id> <member-id>
 ```
 
-Lists are the saved people-collections from the SuperX app. System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` but are read-only and their members are not available through the API (400 `system_list_not_supported`). Adding someone already in a list is harmless: the API returns the existing member with `"duplicate": true` and writes nothing. Member writes are main account only.
+Lists are the saved people-collections from the SuperX app. System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` but are read-only and their members are not available through the API (400 `system_list_not_supported`). Adding someone already in a list is harmless: the API returns the existing member with `"duplicate": true` and writes nothing. Member writes work on your main or linked accounts with `--account`; shared accounts are read-only.
 
 ### Engage (feed posts to reply to)
 
@@ -169,7 +169,7 @@ superx signals:leads --limit 20                      # newest leads across all a
 superx signals:leads --agent 3 --deposited false     # new leads from one agent
 superx signals:leads --since "2026-07-01T00:00:00Z"  # leads discovered since July
 
-# Create an agent (main account only, write scope)
+# Create an agent (write scope; main or linked account via --account)
 superx signals:create-agent \
   --name "Build in public founders" \
   --icp "Indie founders building SaaS in public, sharing MRR and launches" \
@@ -235,7 +235,7 @@ superx scheduled:update <post-id> --clear-tags --clear-title --clear-scratchpad
 
 A new `--at` time alone never schedules a draft; pass `--status scheduled` explicitly. CAUTION: replacement text is a full replace, media included. `--text` without `--media` removes any images the post carried; re-list the current `object_key`s (visible in `scheduled:list`) to keep them. Title, scratchpad, tag, and time edits never touch media.
 
-Write constraints in the current API version: main account only; images via `media:upload` (no video); one of `--text`, `--part`, or `--parts-json`. Idempotent replays add `"replayed": true` to the output. Note that drafts have no scheduled time, so `--from/--to` filters exclude them.
+Write constraints in the current API version: main or linked accounts via `--account` (shared accounts are read-only; tags are workspace-wide and main account only); images via `media:upload` (no video); one of `--text`, `--part`, or `--parts-json`. Idempotent replays add `"replayed": true` to the output. Note that drafts have no scheduled time, so `--from/--to` filters exclude them.
 
 ### Advanced settings
 
@@ -536,17 +536,17 @@ superx signals:leads --agent 3 --deposited false
 superx engage:feeds
 superx engage:posts <feed-id> --limit 50
 
-# Contact list writes (main account)
+# Contact list writes (main or linked account)
 superx lists:add-member <list-id> --handle levelsio
 superx lists:remove-member <list-id> <member-id>
 
-# Signal agent writes (main account)
+# Signal agent writes (main or linked account)
 superx signals:create-agent --name "..." --icp "..." --keyword "..."
 superx signals:pause-agent <id>
 superx signals:resume-agent <id>
 superx signals:delete-agent <id>
 
-# Writes (main account)
+# Writes (main or linked account via --account)
 superx scheduled:create --text "Post"                                # Draft
 superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z"    # Scheduled
 superx scheduled:create --part "1/" --part "2/" --at "..."           # Thread

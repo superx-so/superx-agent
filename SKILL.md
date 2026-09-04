@@ -32,7 +32,7 @@ official website: https://superx.so
 
 **Rule 2: Read PLAYBOOK.md before creating any content.** This repo ships a growth strategy guide (`PLAYBOOK.md`, also inside the installed npm package). It tells you WHAT to post, WHEN, and WHY: the action hierarchy, out-of-network discovery, the engagement loop, and the failure modes that kill reach. The CLI gives you data and actions; the playbook gives you judgment. Do not schedule content without it.
 
-**Rule 3: Know the write constraints.** `scheduled:create` without `--at` creates a DRAFT (nothing publishes). With `--at` it schedules for that time. `scheduled:update` changes only the flags you pass, and a new `--at` alone never schedules a draft; add `--status scheduled` to promote. Writes work on the main account only. Images attach via `media:upload` then `--media` (JPG/PNG/WEBP up to 5MB, GIF up to 15MB; max 4 images or 1 GIF per post); video is not supported. Timestamps MUST be UTC ISO-8601 with an explicit `Z` or offset; naive timestamps are rejected with 400. `articles:publish` posts a long-form article to X IMMEDIATELY and irreversibly; treat it like hitting Publish in public and get human confirmation unless the user already gave it.
+**Rule 3: Know the write constraints.** `scheduled:create` without `--at` creates a DRAFT (nothing publishes). With `--at` it schedules for that time. `scheduled:update` changes only the flags you pass, and a new `--at` alone never schedules a draft; add `--status scheduled` to promote. Writes work on your main account or any linked account (pass the same `--account` you used to read it); accounts shared with you by other people are read-only, and tags are workspace-wide. Images attach via `media:upload` then `--media` (JPG/PNG/WEBP up to 5MB, GIF up to 15MB; max 4 images or 1 GIF per post); video is not supported. Timestamps MUST be UTC ISO-8601 with an explicit `Z` or offset; naive timestamps are rejected with 400. `articles:publish` posts a long-form article to X IMMEDIATELY and irreversibly; treat it like hitting Publish in public and get human confirmation unless the user already gave it.
 
 ---
 
@@ -157,7 +157,7 @@ superx lists:remove-member <list-id> <member-id>     # member-id from lists:memb
 - Lists are the saved people-collections from the SuperX app. Use them to track prospects, customers, or people worth engaging.
 - System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` with `is_system: true` but are read-only and their members are NOT available through the API.
 - Adding someone already in a list is harmless: the existing member returns with `"duplicate": true` and nothing changes.
-- Member writes are main account only and need a key with the write scope.
+- Member writes work on your main or linked accounts (`--account`) and need a key with the write scope; shared accounts are read-only.
 
 ### Engage (feed posts to reply to)
 
@@ -185,7 +185,7 @@ superx signals:leads --limit 20                      # newest leads across all a
 superx signals:leads --agent 3 --deposited false     # one agent's leads not yet in its list
 superx signals:leads --since "2026-07-01T00:00:00Z"  # leads discovered since July
 
-# Create an agent (main account only, write scope)
+# Create an agent (write scope; main or linked account via --account)
 superx signals:create-agent \
   --name "Build in public founders" \
   --icp "Indie founders building SaaS in public, sharing MRR and launches" \
@@ -523,17 +523,17 @@ superx signals:leads --agent 3 --deposited false
 superx engage:feeds
 superx engage:posts <feed-id> --limit 50
 
-# Contact list writes (main account only)
+# Contact list writes (main or linked account)
 superx lists:add-member <list-id> --handle levelsio
 superx lists:remove-member <list-id> <member-id>
 
-# Signal agent writes (main account only)
+# Signal agent writes (main or linked account)
 superx signals:create-agent --name "..." --icp "..." --keyword "..."   # Lead finder
 superx signals:pause-agent <id>
 superx signals:resume-agent <id>
 superx signals:delete-agent <id>
 
-# Writes (main account only)
+# Writes (main or linked account via --account)
 superx scheduled:create --text "Post"                                  # Draft
 superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z"      # Scheduled
 superx scheduled:create --part "1/" --part "2/" --at "..."             # Thread
