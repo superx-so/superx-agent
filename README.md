@@ -124,7 +124,7 @@ superx inspiration:search "indie hackers" --sort outlier --min-likes 500
 superx inspiration:search "AI tools" --min-followers 1000 --max-followers 50000
 ```
 
-Searches a library of 50M+ real high-performing posts by topic. Options: `--sort relevant|recent|likes|reposts|impressions|outlier`, `--min-likes/--min-reposts/--min-replies/--min-bookmarks/--min-impressions`, `--min-followers/--max-followers` (author size), `--since/--until` (UTC ISO-8601), `--lang` (default en), `--exclude-topics "crypto,politics"`, `--limit` (max 50), `--page` (1-7). Each result carries an `outlier_score`: how far the post outperformed the norm for its author's follower tier. Results are intentionally varied between runs; use them for structures and hooks to remix, never to copy.
+Searches a library of 50M+ real high-performing posts by topic. Options: `--sort relevant|recent|likes|reposts|impressions|outlier`, `--min-likes/--min-reposts/--min-replies/--min-bookmarks/--min-impressions`, `--min-followers/--max-followers` (author size), `--since/--until` (UTC ISO-8601), `--lang` (default en), `--exclude-topics "crypto,politics"`, `--limit` (max 50), `--page` (1-7). Each result carries an `outlier_score`: how far the post outperformed the norm for its author's follower tier. Results are relevance-ranked, strongest matches first, with weak and promotional matches filtered out, so a page may return fewer than `--limit` posts. Use them for structures and hooks to remix, never to copy.
 
 ### Contacts (who engages with you)
 

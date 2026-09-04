@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Inspiration search relevance: `inspiration:search` results are now relevance-ranked, strongest matches first and more loosely related posts after. BEHAVIOR CHANGE: results are no longer a fresh varied mix on every run, and weak and promotional matches are filtered out, so a page can return fewer posts than `--limit`; `has_more` no longer requires a full page, so keep paging with `--page` while it is true (pages run 1 to 7). `--sort relevant` is still the default and is the relevance-ranked order
+
 ## 0.2.0 (2026-08-01)
 
 - Advanced post settings: `scheduled:create`/`scheduled:update` gain `--auto-retweet <h>` / `--auto-retweet-remove <h>` (1-12), `--auto-delete <h>` / `--auto-delete-threshold <views>`, `--auto-plug <templateId>` / `--auto-plug-threshold <likes>`, `--super-followers`, plus `--no-*` disable forms; new `plug-templates:list` command. BEHAVIOR CHANGE: posts created via the API now inherit the account's Default Post Settings (auto retweet, auto delete, auto plug, auto DM, Super Followers only) when the matching flags are omitted, exactly like posts composed in the app; previously API posts got no advanced settings at all. Auto DM stays inherit-only (no flag) and surfaces `auto_dm_skipped: true` when a plan limit strips it

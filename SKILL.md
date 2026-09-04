@@ -133,7 +133,7 @@ superx inspiration:search "AI tools" --min-likes 500 --min-followers 1000 --max-
 - Searches a library of 50M+ real high-performing posts. Use results for structures, hooks, and angles to remix. Never copy them.
 - Flags: `--sort relevant|recent|likes|reposts|impressions|outlier`, `--min-likes/--min-reposts/--min-replies/--min-bookmarks/--min-impressions`, `--min-followers/--max-followers` (author size), `--since/--until`, `--lang` (default en), `--exclude-topics "crypto,politics"`, `--limit` (max 50), `--page` (1-7).
 - `outlier_score` on each result = how far the post outperformed the norm for its author's follower tier. Sorting by `outlier` surfaces content that won on substance, not audience size.
-- Results are intentionally varied between runs; re-running the same query returns a different mix.
+- Results are relevance-ranked, strongest matches first. Weak and promotional matches are filtered out, so a page may return fewer than `--limit` posts.
 
 ### Contacts (who engages with you)
 
