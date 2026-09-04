@@ -233,6 +233,16 @@ export class SuperXAPI {
     return (await this.request(`/signals/agents/${id}`, { method: "DELETE" })).json;
   }
 
+  // --- Engage ---
+
+  async listEngageFeeds(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/engage/feeds", { query })).json;
+  }
+
+  async getEngageFeedPosts(feedId: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/engage/feeds/${encodeURIComponent(feedId)}/posts`, { query })).json;
+  }
+
   // --- Scheduled posts ---
 
   async listScheduled(query: RequestOptions["query"] = {}): Promise<any> {

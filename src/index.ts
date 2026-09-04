@@ -16,6 +16,7 @@ import {
   signalsResumeAgent,
   signalsDeleteAgent,
 } from "./commands/signals";
+import { engageFeeds, engagePosts } from "./commands/engage";
 import { scheduledList, scheduledCreate, scheduledUpdate, scheduledDelete, plugTemplatesList } from "./commands/scheduled";
 import { mediaUpload } from "./commands/media";
 import { tagsList, tagsCreate, tagsUpdate, tagsDelete } from "./commands/tags";
@@ -353,6 +354,50 @@ yargs(hideBin(process.argv))
     "Delete a signal agent (its saved leads and contact list stay untouched)",
     (y: Argv) => y.positional("id", { describe: "Agent id (from signals:agents)", type: "number" }),
     run(signalsDeleteAgent)
+  )
+  .command(
+    "engage:feeds",
+    "List the Engage feeds set up in the app",
+    (y: Argv) =>
+      accountOption(y)
+        .example("$0 engage:feeds", "Feed ids, types, and what one fetch costs")
+        .example("$0 engage:feeds --account <account-id>", "Feeds saved on a linked account"),
+    run(engageFeeds)
+  )
+  .command(
+    "engage:posts <feedId>",
+    "Fetch the posts an Engage feed surfaces (for review; replies are sent by a person in the app)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("feedId", { describe: "Feed id (from engage:feeds)", type: "string" })
+        .option("limit", {
+          describe:
+            "Posts to return, 1-50 (default 20). Applies to keyword feeds; list feeds return one page (about 10 to 25 posts) and --limit only trims it",
+          type: "number",
+        })
+        .option("mode", {
+          describe: "top = highest-signal posts first (default); latest = newest first",
+          type: "string",
+          choices: ["top", "latest"],
+        })
+        .option("fresh", {
+          describe: "true = skip the cache and fetch new posts; false = allow cached posts (default)",
+          type: "boolean",
+        })
+        .option("include-replied", {
+          describe:
+            "true = keep posts already replied to, skipped, or blocked and flag them with `replied`; false = leave them out (default)",
+          type: "boolean",
+        })
+        .option("exclude", {
+          describe:
+            "Comma list of post ids to leave out (max 100); this is how you page: pass the ids you already have to get the next batch",
+          type: "string",
+        })
+        .example("$0 engage:posts <feed-id> --limit 50", "One big page from a keyword feed")
+        .example("$0 engage:posts <feed-id> --mode latest --fresh true", "Newest posts, skipping the cache")
+        .example("$0 engage:posts <feed-id> --exclude 1234567890,1234567891", "Next batch, minus the posts you have"),
+    run(engagePosts)
   )
   .command(
     "scheduled:list",

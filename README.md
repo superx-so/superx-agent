@@ -144,6 +144,23 @@ superx lists:remove-member <list-id> <member-id>
 
 Lists are the saved people-collections from the SuperX app. System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` but are read-only and their members are not available through the API (400 `system_list_not_supported`). Adding someone already in a list is harmless: the API returns the existing member with `"duplicate": true` and writes nothing. Member writes are main account only.
 
+### Engage (feed posts to reply to)
+
+```bash
+superx engage:feeds                                  # the feeds saved in the app's Engage tab
+superx engage:posts <feed-id> --limit 50             # one big page of candidate posts
+superx engage:posts <feed-id> --mode latest --fresh true
+superx engage:posts <feed-id> --exclude 1234567890,1234567891   # next batch, minus what you have
+```
+
+Engage feeds are the keyword and list feeds set up in the SuperX app. `engage:feeds` returns each feed's `id`, `name`, `type` (`keywords`, `list`, or `x_list`), `active` flag, and `fetch_units` (what one fetch of it costs: 1 for a keyword feed, at most 3 for list feeds, and an imported X list charges 1 at fetch time). Feeds are created and edited in the app, not through the API.
+
+`engage:posts <feed-id>` returns candidate posts with text, author (handle, bio, follower counts), engagement metrics, and post time, plus `has_more` and the `feed` it came from. Results are for review: replies are written and sent by a person in SuperX, so there is no reply command. Sending replies that read as inauthentic can get an X account suspended under X's inauthentic-behavior rules and a SuperX account terminated; AI output must be reviewed and meaningfully edited by a person before it is posted, and reply activity is logged and may be audited.
+
+`--limit` (1-50, default 20) applies to keyword feeds. List feeds ignore it upstream and return one page per fetch, about 10 posts for a member list and 20 to 25 for an imported X list, with `--limit` only trimming that page; page those with `--exclude` instead. On a keyword feed a 50-post page costs the same as a 20-post page, so ask for 50 a few times a day and filter locally rather than polling. Feeds refresh over hours, so fetching more often than hourly returns the same posts. `--mode top|latest` defaults to `top`; `--fresh true` skips the cache; `--include-replied true` keeps posts already replied to, skipped, or blocked and flags them with `replied`. `--exclude` takes up to 100 post ids and is how you page.
+
+Feed fetches have their own per-plan daily allowance (Trial 20, Pro 60, Advanced 120, Ultra 300 per day), separate from the read budget; per minute: trial 2, pro 5, advanced 10, ultra 15. A list feed that rotates its members counts as up to 3 fetches, every other feed as 1; `engage:feeds` never touches the allowance. Over the cap you get 429 `rate_limited`: the API returns `remaining_day`; the CLI prints the message and the retry delay. Fetches also run a few at a time across all API users, so a 429 with a retry delay can mean busy rather than out of allowance; wait and retry. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as the API. An unknown feed id returns 404 `feed_not_found`.
+
 ### Signals (automated lead finding)
 
 ```bash
@@ -380,6 +397,8 @@ The CLI talks to these SuperX API endpoints (base `https://api.superx.so/v1`):
 | `/signals/agents/:id` | PATCH | `signals:pause-agent <id>` / `signals:resume-agent <id>` |
 | `/signals/agents/:id` | DELETE | `signals:delete-agent <id>` |
 | `/signals/leads` | GET | `signals:leads` |
+| `/engage/feeds` | GET | `engage:feeds` |
+| `/engage/feeds/:id/posts` | GET | `engage:posts <feedId>` |
 | `/media` | POST | `media:upload <file>` |
 | `/scheduled-posts` | GET | `scheduled:list` |
 | `/scheduled-posts` | POST | `scheduled:create` |
@@ -476,6 +495,7 @@ src/
     ├── contacts.ts   # contacts:list / contacts:replies
     ├── lists.ts      # lists:list / lists:members / lists:add-member / lists:remove-member
     ├── signals.ts    # signals:agents / signals:leads / signals:create-agent / signals:pause-agent / signals:resume-agent / signals:delete-agent
+    ├── engage.ts     # engage:feeds / engage:posts
     ├── media.ts      # media:upload
     ├── scheduled.ts  # scheduled:list / scheduled:create / scheduled:update / scheduled:delete
     ├── tags.ts       # tags:list / tags:create / tags:update / tags:delete
@@ -513,6 +533,8 @@ superx lists:list
 superx lists:members <list-id> --q "founder"
 superx signals:agents
 superx signals:leads --agent 3 --deposited false
+superx engage:feeds
+superx engage:posts <feed-id> --limit 50
 
 # Contact list writes (main account)
 superx lists:add-member <list-id> --handle levelsio

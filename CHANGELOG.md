@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Engage feeds: `engage:feeds` lists the keyword and list feeds saved in the app (with `type`, `active`, and `fetch_units`), and `engage:posts <feedId>` fetches one feed's candidate posts for review (`--account`, `--limit` 1-50, `--mode top|latest`, `--fresh`, `--include-replied`, `--exclude` comma list of post ids to page with). Read-only by design: replies are written and sent by a person in the SuperX app, so there is no reply command. `--limit` applies to keyword feeds; list feeds return one page per fetch and are paged with `--exclude`. Feed fetches have their own per-plan daily allowance and a list feed that rotates its members counts as 3
 - Inspiration search relevance: `inspiration:search` results are now relevance-ranked, strongest matches first and more loosely related posts after. BEHAVIOR CHANGE: results are no longer a fresh varied mix on every run, and weak and promotional matches are filtered out, so a page can return fewer posts than `--limit`; `has_more` no longer requires a full page, so keep paging with `--page` while it is true (pages run 1 to 7). `--sort relevant` is still the default and is the relevance-ranked order
 
 ## 0.2.0 (2026-08-01)

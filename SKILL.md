@@ -159,6 +159,24 @@ superx lists:remove-member <list-id> <member-id>     # member-id from lists:memb
 - Adding someone already in a list is harmless: the existing member returns with `"duplicate": true` and nothing changes.
 - Member writes are main account only and need a key with the write scope.
 
+### Engage (feed posts to reply to)
+
+```bash
+superx engage:feeds                                  # feeds saved in the app, with type and fetch cost
+superx engage:posts <feed-id> --limit 50             # one big page of candidate posts
+superx engage:posts <feed-id> --mode latest --fresh true         # newest, skipping the cache
+superx engage:posts <feed-id> --exclude 1234567890,1234567891    # next batch, minus what you have
+superx engage:posts <feed-id> --include-replied true             # keep posts already replied to
+```
+
+- Engage feeds are the keyword and list feeds the user set up in the app's Engage tab. `engage:feeds` gives each feed's `id`, `name`, `type` (`keywords`, `list`, `x_list`), `active`, and `fetch_units`. Feeds are created and edited in the app; the API only reads them.
+- `engage:posts` returns candidate posts (text, author handle/bio/follower counts, engagement metrics, post time) plus `has_more` and the `feed`. Score and shortlist them for the user.
+- READ-ONLY BY DESIGN: there is no reply command. Replies are written and sent by a person in SuperX. Sending replies that read as inauthentic can get an X account suspended and a SuperX account terminated; AI output must be reviewed and meaningfully edited by a person before it is posted. Surface candidates and draft suggestions for the user; never claim a reply was sent.
+- `--limit` (1-50, default 20) applies to KEYWORD feeds. List feeds return one page per fetch (about 10 posts for a member list, 20 to 25 for an imported X list) and `--limit` only trims it. Page a list feed with `--exclude` (at most 100 ids per call; window the list to the most recent ids), not a bigger `--limit`.
+- A 50-post page on a keyword feed costs the same as a 20-post page: ask for `--limit 50` a few times a day and filter locally. Feeds refresh over hours, so polling more often than hourly returns the same posts.
+- Each plan has a daily feed-fetch allowance (Trial 20, Pro 60, Advanced 120, Ultra 300), separate from the read budget; per minute: trial 2, pro 5, advanced 10, ultra 15. A list feed that rotates its members counts as 3 fetches. `engage:feeds` never spends it. Over the cap you get 429 `rate_limited`: the API returns `remaining_day`; the CLI prints the message and the retry delay.
+- Posts a fetch returns count as seen and get demoted in later fetches, in the app as well as here. An unknown feed id returns 404 `feed_not_found`.
+
 ### Signals (automated lead finding)
 
 ```bash
@@ -471,6 +489,7 @@ superx scheduled:list --status scheduled
 26. **`context:set` list flags REPLACE the stored list**: `--interests` and `--favorite-creators` overwrite what is there; include every value the user should keep. `""` on a string flag clears it (style-guide overrides then revert to the generated guide). These settings steer all future AI output; confirm with the user before changing them.
 27. **`queue:set --slots-json` REPLACES the whole schedule** and re-flows queued posts onto the new slots. Read the current slots with `queue:get` first and send the full set. `'[]'` clears every slot and leaves the queue all-custom. `reflow.bailed: true` means the settings saved but no post moved.
 28. **`editor_restricted` (403)**: the account is shared with the key owner with Editor permission. Editors can change queue settings but not context settings. Only the account owner can.
+29. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
 
 ---
 
@@ -501,6 +520,8 @@ superx lists:list
 superx lists:members <list-id> --q "founder"
 superx signals:agents
 superx signals:leads --agent 3 --deposited false
+superx engage:feeds
+superx engage:posts <feed-id> --limit 50
 
 # Contact list writes (main account only)
 superx lists:add-member <list-id> --handle levelsio
