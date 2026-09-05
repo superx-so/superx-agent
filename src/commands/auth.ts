@@ -67,6 +67,7 @@ export async function status(): Promise<void> {
     api_url: config.apiUrl,
     owner: me?.data?.owner ?? null,
     plan: me?.data?.plan ?? null,
+    credits: me?.data?.credits ?? null,
     key: me?.data?.key ?? null,
     rate_limit: api.lastRateLimit,
   });

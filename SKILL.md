@@ -51,7 +51,7 @@ echo "$POSTS" | jq '.data[].text'
 
 ## Core Workflow
 
-1. **Check auth**: `superx status` (verifies the key and shows plan + rate-limit state)
+1. **Check auth**: `superx status` (verifies the key and shows plan, AI credit pool, and rate-limit state)
 2. **Discover accounts**: `superx accounts` (main account first; note ids for `--account`)
 3. **Read the data**: top posts, analytics, most engaged contacts
 4. **Read PLAYBOOK.md**, then draft content informed by what already works for this account
@@ -89,7 +89,7 @@ superx scheduled:list --status draft,scheduled
 ```bash
 superx login                  # Guided: prints the key page URL, prompts for a paste
 superx login --key "sxk_..."  # Non-interactive
-superx status                 # Verify credentials; shows plan, key scopes, rate limits
+superx status                 # Verify credentials; shows plan, credits, key scopes, rate limits
 superx logout                 # Delete ~/.superx/credentials.json
 export SUPERX_API_KEY=sxk_... # Env alternative (credentials file wins when both exist)
 ```
