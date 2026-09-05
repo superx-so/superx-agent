@@ -6,8 +6,26 @@ import { login, logout, status } from "./commands/auth";
 import { me, accounts } from "./commands/accounts";
 import { postsList, postsAnalytics, postsDraft, repliesList, repliesReceived } from "./commands/posts";
 import { inspirationSearch } from "./commands/inspiration";
-import { contactsList, contactsReplies } from "./commands/contacts";
-import { listsList, listsMembers, listsAddMember, listsRemoveMember } from "./commands/lists";
+import {
+  contactsList,
+  contactsReplies,
+  contactsGet,
+  contactsNotes,
+  contactsNotesAdd,
+  contactsNotesUpdate,
+  contactsNotesDelete,
+} from "./commands/contacts";
+import {
+  listsList,
+  listsMembers,
+  listsAddMember,
+  listsRemoveMember,
+  listsCreate,
+  listsRename,
+  listsDelete,
+  listsAddMembers,
+  listsRemoveMembers,
+} from "./commands/lists";
 import {
   signalsAgents,
   signalsLeads,
@@ -37,6 +55,7 @@ import {
   contextProducts,
   contextProductsSet,
   contextProductsDelete,
+  contextProductsReplace,
 } from "./commands/context";
 import { queueGet, queueSet } from "./commands/queue";
 import { docs } from "./commands/docs";
@@ -280,6 +299,54 @@ yargs(hideBin(process.argv))
     run(contactsReplies)
   )
   .command(
+    "contacts:get <id>",
+    "Show one person: profile, follower counts and the lists they are in",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Numeric X user id (from contacts:list)", type: "string" })
+        .option("refresh", {
+          describe: "Refresh the profile from X when the stored copy is stale (counts against the enrichment limit)",
+          type: "boolean",
+        }),
+    run(contactsGet)
+  )
+  .command(
+    "contacts:notes <id>",
+    "List your private notes about one person (newest first)",
+    (y: Argv) =>
+      accountOption(y).positional("id", { describe: "Numeric X user id", type: "string" }),
+    run(contactsNotes)
+  )
+  .command(
+    "contacts:notes:add <id>",
+    "Write a private note about one person (never posted anywhere)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Numeric X user id", type: "string" })
+        .option("body", { describe: "Note text (1-5000 chars)", type: "string", demandOption: true })
+        .example('$0 contacts:notes:add 44196397 --body "Met at the SaaS meetup, wants a demo"', "Add a note"),
+    run(contactsNotesAdd)
+  )
+  .command(
+    "contacts:notes:update <id> <noteId>",
+    "Rewrite one note (the new body fully replaces the old one)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Numeric X user id", type: "string" })
+        .positional("noteId", { describe: "Note id (from contacts:notes)", type: "string" })
+        .option("body", { describe: "Replacement note text (1-5000 chars)", type: "string", demandOption: true }),
+    run(contactsNotesUpdate)
+  )
+  .command(
+    "contacts:notes:delete <id> <noteId>",
+    "Delete one note (note id from contacts:notes)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Numeric X user id", type: "string" })
+        .positional("noteId", { describe: "Note id (from contacts:notes)", type: "string" }),
+    run(contactsNotesDelete)
+  )
+  .command(
     "lists:list",
     "List your contact lists (system lists are read-only)",
     (y: Argv) => accountOption(y),
@@ -314,6 +381,58 @@ yargs(hideBin(process.argv))
         .positional("id", { describe: "List id (from lists:list)", type: "string" })
         .positional("memberId", { describe: "Member id (from lists:members)", type: "string" }),
     run(listsRemoveMember)
+  )
+  .command(
+    "lists:create",
+    "Create a contact list (names are not unique)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("name", { describe: "List name (1-120 chars)", type: "string", demandOption: true })
+        .example('$0 lists:create --name "Founder prospects"', "Create a list"),
+    run(listsCreate)
+  )
+  .command(
+    "lists:rename <id>",
+    "Rename a contact list you created (system lists are read-only)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "List id (from lists:list)", type: "string" })
+        .option("name", { describe: "New name (1-120 chars)", type: "string", demandOption: true }),
+    run(listsRename)
+  )
+  .command(
+    "lists:delete <id>",
+    "Delete a contact list you created and its membership (the people stay)",
+    (y: Argv) =>
+      accountOption(y).positional("id", { describe: "List id (from lists:list)", type: "string" }),
+    run(listsDelete)
+  )
+  .command(
+    "lists:add-members <id>",
+    "Add up to 500 people at once by X user id (ids SuperX already knows)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "List id (from lists:list)", type: "string" })
+        .option("x-user-ids", {
+          describe: "Comma list of numeric X user ids (max 500); ids SuperX has never seen come back in not_found",
+          type: "string",
+          demandOption: true,
+        })
+        .example("$0 lists:add-members abc123 --x-user-ids 44196397,1234567890", "Add two people by id"),
+    run(listsAddMembers)
+  )
+  .command(
+    "lists:remove-members <id>",
+    "Remove up to 500 members at once by member id (from lists:members)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "List id (from lists:list)", type: "string" })
+        .option("member-ids", {
+          describe: "Comma list of member ids (max 500, from lists:members)",
+          type: "string",
+          demandOption: true,
+        }),
+    run(listsRemoveMembers)
   )
   .command(
     "signals:agents",
@@ -661,6 +780,25 @@ yargs(hideBin(process.argv))
     (y: Argv) =>
       accountOption(y).positional("id", { describe: "Product id (from context:products)", type: "string" }),
     run(contextProductsDelete)
+  )
+  .command(
+    "context:products:replace",
+    "Replace the WHOLE product list with a JSON array (max 5); products missing from it are removed",
+    (y: Argv) =>
+      accountOption(y)
+        .option("json", {
+          describe: 'JSON array of products, e.g. \'[{"url":"https://superx.so","name":"SuperX"}]\' (\'[]\' removes every product)',
+          type: "string",
+          demandOption: true,
+        })
+        .example(
+          `$0 context:products:replace --json '[{"url":"https://superx.so","name":"SuperX"}]'`,
+          "Make SuperX the only product"
+        )
+        .epilogue(
+          "CAUTION: this is a full replace by url. Read the current list with context:products first and send every product the account should keep; to change one product without touching the others, use context:products:set."
+        ),
+    run(contextProductsReplace)
   )
   .command(
     "queue:get",

@@ -158,3 +158,31 @@ export async function contextProductsDelete(argv: {
   const api = new SuperXAPI(getConfig());
   printJson(await api.deleteContextProduct(id, { account_id: argv.account }));
 }
+
+/**
+ * Full replace of the product list (PUT /v1/context/products). CAUTION: any
+ * product whose url is missing from the payload is removed; use
+ * context:products:set to edit one product without touching the others.
+ */
+export async function contextProductsReplace(argv: {
+  json: string;
+  account?: string;
+}): Promise<void> {
+  let products: unknown;
+  try {
+    products = JSON.parse(argv.json);
+  } catch (err: any) {
+    note(`--json is not valid JSON: ${err?.message || err}`);
+    process.exit(1);
+  }
+  if (!Array.isArray(products)) {
+    note('--json must be a JSON array, e.g. \'[{"url":"https://superx.so","name":"SuperX"}]\' (\'[]\' removes every product).');
+    process.exit(1);
+  }
+
+  const body: Record<string, any> = { products };
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.setContextProducts(body));
+}

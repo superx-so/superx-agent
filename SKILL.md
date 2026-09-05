@@ -145,6 +145,20 @@ superx contacts:replies <contact-id> --sort recent  # One person's reply history
 
 Sort options: `contacts:list` takes `engagement|replies|reposts`; `contacts:replies` takes `recent|most_liked`.
 
+```bash
+superx contacts:get <x-user-id>                      # Profile, follower counts, verified state, lists they are in
+superx contacts:get <x-user-id> --refresh            # Refresh a stale profile from X (costs an enrichment unit)
+superx contacts:notes <x-user-id>                    # Your private notes about them, newest first
+superx contacts:notes:add <x-user-id> --body "Wants a demo in September"
+superx contacts:notes:update <x-user-id> <note-id> --body "Demo booked for 12 Sept"
+superx contacts:notes:delete <x-user-id> <note-id>
+```
+
+- The id everywhere here is a NUMERIC X user id, from `contacts:list`, `lists:members` or `signals:leads`. `contacts:get` returns the stored profile plus each list the person is in, with the `member_id` that `lists:remove-member` takes.
+- `--refresh` is the only path that calls X. Leave it off unless the follower counts have to be current: it counts against the tighter enrichment limit, and the default read is free of it.
+- Notes live inside SuperX and are NEVER posted anywhere. Use them for context you want on the next conversation. A note written through the CLI is attributed to the account you wrote as.
+- Note writes need a key with the write scope; shared accounts are read-only.
+
 ### Contact lists
 
 ```bash
@@ -158,6 +172,18 @@ superx lists:remove-member <list-id> <member-id>     # member-id from lists:memb
 - System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` with `is_system: true` but are read-only and their members are NOT available through the API.
 - Adding someone already in a list is harmless: the existing member returns with `"duplicate": true` and nothing changes.
 - Member writes work on your main or linked accounts (`--account`) and need a key with the write scope; shared accounts are read-only.
+
+```bash
+superx lists:create --name "Founder prospects"       # Names are NOT unique; check lists:list first
+superx lists:rename <list-id> --name "Q4 prospects"
+superx lists:delete <list-id>                        # Deletes the list and its membership; the people stay
+superx lists:add-members <list-id> --x-user-ids 44196397,944883311     # up to 500 per call
+superx lists:remove-members <list-id> --member-ids m1abc,m2def         # up to 500 per call
+```
+
+- `lists:add-members` does NO live lookup: it uses profiles SuperX already stores, which is why it costs one write and no enrichment. Ids SuperX has never seen come back in `not_found` and are NOT added. Add those one at a time with `lists:add-member --handle`, which does resolve live.
+- Re-adding someone already in the list is counted in `duplicates`, never an error. `lists:remove-members` skips ids that are not in the list, so `deleted` can be lower than what you sent.
+- `lists:delete` also stops any signal agent depositing into that list until the agent is repointed in the SuperX app. Confirm with the user first.
 
 ### Engage (feed posts to reply to)
 
@@ -326,12 +352,14 @@ superx context:products
 superx context:products:set --url "https://superx.so" --name "SuperX" --description "X growth platform"
 superx context:products:set --id 3 --updates "Shipped the public API"
 superx context:products:delete <product-id>
+superx context:products:replace --json '[{"url":"https://superx.so","name":"SuperX"}]'   # FULL REPLACE
 ```
 
 - What each setting affects: `--profile-description` grounds the AI's voice and personalizes the daily content mix and search; `--rules` are mandatory instructions on EVERY AI surface; `--reply-rules` and `--reply-author-name` steer generated replies; `--favorite-creators` (X usernames, max 3) inspire the writing style; `--interests` are the highest-priority topics for content suggestions; `--style-audience`/`--style-vocabulary` outrank the app's generated style guide until cleared.
 - `context:get` also returns the read-only generated style guide (`style_guide.generated`) so you can see what a cleared override falls back to.
 - Caps: profile description 500, rules 500, reply rules 500, style audience 600, style vocabulary 1000 characters; 30 interests of 50 characters each; 3 favorite creators; 5 products.
 - `context:products:set --url` creates the product when it does not exist. Removing a product is reversible: re-adding the same url restores its scraped details.
+- `context:products:replace` REPLACES the whole product list: any product whose url is missing from the array is removed. Read `context:products` first and send every product the user should keep, or use `context:products:set` to change one in place. `'[]'` removes every product.
 - Writes need a key with the write scope. Unlike scheduling, context writes work on ANY linked or shared account via `--account` (they are per-account settings). On a share with Editor permission they return 403 `editor_restricted`: only the account owner can change these. These settings shape ALL future AI output for the account; confirm with the user before changing rules or the profile description.
 
 ### Queue settings (posting schedule)
@@ -489,7 +517,10 @@ superx scheduled:list --status scheduled
 26. **`context:set` list flags REPLACE the stored list**: `--interests` and `--favorite-creators` overwrite what is there; include every value the user should keep. `""` on a string flag clears it (style-guide overrides then revert to the generated guide). These settings steer all future AI output; confirm with the user before changing them.
 27. **`queue:set --slots-json` REPLACES the whole schedule** and re-flows queued posts onto the new slots. Read the current slots with `queue:get` first and send the full set. `'[]'` clears every slot and leaves the queue all-custom. `reflow.bailed: true` means the settings saved but no post moved.
 28. **`editor_restricted` (403)**: the account is shared with the key owner with Editor permission. Editors can change queue settings but not context settings. Only the account owner can.
-29. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
+29. **`lists:add-members` takes ids SuperX already knows**: it does no live lookup, so any id in the response's `not_found` was never added. Add those with `lists:add-member --handle <handle>` one at a time (that path resolves live and costs an enrichment unit).
+30. **Notes written through the API are attributed to the acting account**, not to a separate API identity: `created_by` on a note is the account named by `--account` (your main account when omitted). A note id from a different contact returns 404 `note_not_found`.
+31. **`context:products:replace` REPLACES the whole product list**: products whose url is missing from `--json` are removed. Read `context:products` first, or use `context:products:set` for a single-product edit.
+32. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
 
 ---
 
@@ -515,6 +546,8 @@ superx replies:list --limit 20
 superx inspiration:search "build in public" --sort outlier --limit 10
 superx contacts:list --sort engagement --limit 20
 superx contacts:replies <id> --sort most_liked
+superx contacts:get <x-user-id>
+superx contacts:notes <x-user-id>
 superx replies:received --sort most_liked --limit 20
 superx lists:list
 superx lists:members <list-id> --q "founder"
@@ -523,9 +556,19 @@ superx signals:leads --agent 3 --deposited false
 superx engage:feeds
 superx engage:posts <feed-id> --limit 50
 
+# Contact writes (main or linked account)
+superx contacts:notes:add <x-user-id> --body "..."      # Private note, never posted
+superx contacts:notes:update <x-user-id> <note-id> --body "..."
+superx contacts:notes:delete <x-user-id> <note-id>
+
 # Contact list writes (main or linked account)
 superx lists:add-member <list-id> --handle levelsio
 superx lists:remove-member <list-id> <member-id>
+superx lists:create --name "Founder prospects"
+superx lists:rename <list-id> --name "Q4 prospects"
+superx lists:delete <list-id>                            # List + membership; the people stay
+superx lists:add-members <list-id> --x-user-ids 44196397,944883311    # <=500, ids SuperX knows
+superx lists:remove-members <list-id> --member-ids m1abc,m2def        # <=500
 
 # Signal agent writes (main or linked account)
 superx signals:create-agent --name "..." --icp "..." --keyword "..."   # Lead finder
@@ -571,6 +614,7 @@ superx context:set --interests "indie hacking,SaaS"   # replaces the list
 superx context:products
 superx context:products:set --url "https://superx.so" --name "SuperX"
 superx context:products:delete <id>
+superx context:products:replace --json '[{"url":"https://superx.so"}]'   # FULL REPLACE
 
 # Queue settings (posting schedule; 0 = Sunday)
 superx queue:get

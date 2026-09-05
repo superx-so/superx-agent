@@ -192,6 +192,38 @@ export class SuperXAPI {
     return (await this.request(`/contacts/${encodeURIComponent(contactId)}/replies`, { query })).json;
   }
 
+  async getContact(contactId: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/contacts/${encodeURIComponent(contactId)}`, { query })).json;
+  }
+
+  // --- Contact notes ---
+
+  async listContactNotes(contactId: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/contacts/${encodeURIComponent(contactId)}/notes`, { query })).json;
+  }
+
+  async addContactNote(contactId: string, body: unknown): Promise<any> {
+    return (await this.request(`/contacts/${encodeURIComponent(contactId)}/notes`, { method: "POST", body })).json;
+  }
+
+  async updateContactNote(contactId: string, noteId: string, body: unknown): Promise<any> {
+    return (
+      await this.request(
+        `/contacts/${encodeURIComponent(contactId)}/notes/${encodeURIComponent(noteId)}`,
+        { method: "PATCH", body }
+      )
+    ).json;
+  }
+
+  async deleteContactNote(contactId: string, noteId: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (
+      await this.request(
+        `/contacts/${encodeURIComponent(contactId)}/notes/${encodeURIComponent(noteId)}`,
+        { method: "DELETE", query }
+      )
+    ).json;
+  }
+
   // --- Contact lists ---
 
   async listContactLists(query: RequestOptions["query"] = {}): Promise<any> {
@@ -212,6 +244,30 @@ export class SuperXAPI {
         `/contact-lists/${encodeURIComponent(listId)}/members/${encodeURIComponent(memberId)}`,
         { method: "DELETE" }
       )
+    ).json;
+  }
+
+  async createList(body: unknown): Promise<any> {
+    return (await this.request("/contact-lists", { method: "POST", body })).json;
+  }
+
+  async renameList(listId: string, body: unknown): Promise<any> {
+    return (await this.request(`/contact-lists/${encodeURIComponent(listId)}`, { method: "PATCH", body })).json;
+  }
+
+  async deleteList(listId: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/contact-lists/${encodeURIComponent(listId)}`, { method: "DELETE", query })).json;
+  }
+
+  async addListMembers(listId: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/contact-lists/${encodeURIComponent(listId)}/members/bulk`, { method: "POST", body })
+    ).json;
+  }
+
+  async removeListMembers(listId: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/contact-lists/${encodeURIComponent(listId)}/members/bulk-delete`, { method: "POST", body })
     ).json;
   }
 
@@ -297,6 +353,11 @@ export class SuperXAPI {
     return (
       await this.request(`/context/products/${encodeURIComponent(id)}`, { method: "DELETE", query })
     ).json;
+  }
+
+  /** Full replace of the account's product list (max 5). */
+  async setContextProducts(body: unknown): Promise<any> {
+    return (await this.request("/context/products", { method: "PUT", body })).json;
   }
 
   // --- Queue settings ---
