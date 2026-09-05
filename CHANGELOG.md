@@ -4,6 +4,7 @@
 
 - Credits: `superx status` now prints a `credits` block (`remaining`, `pool`, `period`, `period_end`, `bonus`) alongside plan and rate limits, so you can check the AI credit pool before running a paid command. Paid responses also carry `X-Credits-Charged`, `X-Credits-Remaining` and `X-Credits-Reset` headers, and an exhausted pool returns `429 ai_credits_exhausted` with `credits_required`, `credits_remaining` and `reset_at`
 - Drafting: `posts:draft` writes post drafts in your own voice from a brief (`--brief` required, `--count` 1-3, `--voice mine|creator|hybrid` with `--creator @handle`, `--mirror` the text of a proven post whose shape to copy, `--collection` to bias the picked shape, `--instructions`, `--account`). Nothing is scheduled and nothing is saved: the text comes back for you to review, then pass the final version to `scheduled:create`. Each draft costs AI credits and failed drafts are refunded
+- Skill layout: removed the duplicate `skills/superx/SKILL.md`; the root `SKILL.md` is the single skill entrypoint for `npx skills add`, the Claude plugin manifests and the npm package, so hosts that discover skills recursively no longer list SuperX twice (thanks @lukemaj, #1)
 
 ## 0.3.0 (2026-09-05)
 
@@ -31,5 +32,3 @@ Initial release.
 - Clean JSON on stdout for every data command; human messages go to stderr
 - Idempotency-Key support on `scheduled:create` with replay detection
 - Agent skill (`SKILL.md`) and growth strategy guide (`PLAYBOOK.md`)
-
-Maintainer note: `SKILL.md` and `skills/superx/SKILL.md` must stay byte-identical. Edit the root file, then copy it over the nested one.

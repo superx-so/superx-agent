@@ -505,8 +505,6 @@ src/
     └── docs.ts       # docs
 ```
 
-Maintainer note: `SKILL.md` (repo root) and `skills/superx/SKILL.md` must stay byte-identical. Edit the root file and copy it over the nested one.
-
 ---
 
 ## Quick reference
