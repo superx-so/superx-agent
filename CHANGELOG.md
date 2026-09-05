@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Drafting: `posts:draft` writes post drafts in your own voice from a brief (`--brief` required, `--count` 1-3, `--voice mine|creator|hybrid` with `--creator @handle`, `--mirror` the text of a proven post whose shape to copy, `--collection` to bias the picked shape, `--instructions`, `--account`). Nothing is scheduled and nothing is saved: the text comes back for you to review, then pass the final version to `scheduled:create`. Each draft costs AI credits and failed drafts are refunded
+
 ## 0.3.0 (2026-09-05)
 
 - Engage feeds: `engage:feeds` lists the keyword and list feeds saved in the app (with `type`, `active`, and `fetch_units`), and `engage:posts <feedId>` fetches one feed's candidate posts for review (`--account`, `--limit` 1-50, `--mode top|latest`, `--fresh`, `--include-replied`, `--exclude` comma list of post ids to page with). Read-only by design: replies are written and sent by a person in the SuperX app, so there is no reply command. `--limit` applies to keyword feeds; list feeds return one page per fetch and are paged with `--exclude`. Feed fetches have their own per-plan daily allowance and a list feed that rotates its members counts as 3

@@ -4,7 +4,7 @@ import type { Argv } from "yargs";
 import { ApiError, note } from "./api";
 import { login, logout, status } from "./commands/auth";
 import { me, accounts } from "./commands/accounts";
-import { postsList, postsAnalytics, repliesList, repliesReceived } from "./commands/posts";
+import { postsList, postsAnalytics, postsDraft, repliesList, repliesReceived } from "./commands/posts";
 import { inspirationSearch } from "./commands/inspiration";
 import { contactsList, contactsReplies } from "./commands/contacts";
 import { listsList, listsMembers, listsAddMember, listsRemoveMember } from "./commands/lists";
@@ -164,6 +164,45 @@ yargs(hideBin(process.argv))
         .option("until", { describe: "End of range (UTC ISO-8601)", type: "string" })
         .example('$0 posts:analytics --since "2026-06-01T00:00:00Z" --until "2026-07-01T00:00:00Z"', "June analytics"),
     run(postsAnalytics)
+  )
+  .command(
+    "posts:draft",
+    "Write post drafts in your voice from a brief (nothing is scheduled; costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("brief", {
+          describe: "What the post should say: the data, angle, or notes to write from (required, max 2000 chars)",
+          type: "string",
+        })
+        .option("count", {
+          describe: "How many drafts to write, 1 to 3 (default 1). Each one costs credits",
+          type: "number",
+        })
+        .option("voice", {
+          describe: "Whose voice to write in",
+          type: "string",
+          choices: ["mine", "creator", "hybrid"],
+        })
+        .option("creator", {
+          describe: "X handle to borrow style from (needed for --voice creator or hybrid)",
+          type: "string",
+        })
+        .option("mirror", {
+          describe: "Text of a proven post whose SHAPE to copy (50-1500 chars); pick one with room for your data, a two-line aphorism squeezes the facts out; omit to have one picked",
+          type: "string",
+        })
+        .option("collection", {
+          describe: "Format collection id to bias the picked shape toward; used only without --mirror",
+          type: "string",
+        })
+        .option("instructions", {
+          describe: "Extra style instructions for this batch (max 500 chars)",
+          type: "string",
+        })
+        .example('$0 posts:draft --brief "We cut churn from 6.2% to 3.8% by replacing the onboarding video with a checklist"', "One draft in your voice")
+        .example('$0 posts:draft --brief "..." --count 3 --mirror "$(cat proven-post.txt)"', "Three drafts copying a proven post shape")
+        .example('$0 posts:draft --brief "..." --voice hybrid --creator @naval', "Your substance, a creator's flavor"),
+    run(postsDraft)
   )
   .command(
     "replies:list",

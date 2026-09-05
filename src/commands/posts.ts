@@ -1,4 +1,4 @@
-import { SuperXAPI, printJson } from "../api";
+import { SuperXAPI, printJson, note } from "../api";
 import { getConfig } from "../config";
 
 interface ListArgs {
@@ -35,6 +35,41 @@ export async function postsAnalytics(argv: { account?: string; since?: string; u
       until: argv.until,
     })
   );
+}
+
+/**
+ * posts:draft — write post drafts in the account's voice from a brief.
+ * Nothing is scheduled: the text comes back for a person to polish, then
+ * `scheduled:create` saves or schedules it. Costs AI credits per draft.
+ */
+export async function postsDraft(argv: {
+  brief?: string;
+  count?: number;
+  voice?: string;
+  creator?: string;
+  mirror?: string;
+  collection?: string;
+  instructions?: string;
+  account?: string;
+}): Promise<void> {
+  if (!argv.brief || !argv.brief.trim()) {
+    note('Provide --brief "what the post should say".');
+    process.exit(1);
+  }
+
+  const body: Record<string, unknown> = { brief: argv.brief };
+  if (argv.count !== undefined) body.count = argv.count;
+  if (argv.voice) body.voice = argv.voice;
+  if (argv.creator) body.creator = argv.creator;
+  if (argv.mirror) body.mirror = argv.mirror;
+  if (argv.collection) body.collection = argv.collection;
+  if (argv.instructions) body.instructions = argv.instructions;
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  const json = await api.draftPost(body);
+  note("Nothing was scheduled. Review the text, then pass it to scheduled:create.");
+  printJson(json);
 }
 
 export async function repliesList(argv: ListArgs): Promise<void> {

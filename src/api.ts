@@ -169,6 +169,13 @@ export class SuperXAPI {
     return (await this.request("/replies/received", { query })).json;
   }
 
+  // --- Drafting ---
+
+  /** Write post drafts in the account's voice. Nothing is scheduled. */
+  async draftPost(body: unknown): Promise<any> {
+    return (await this.request("/posts/draft", { method: "POST", body })).json;
+  }
+
   // --- Inspiration ---
 
   async searchInspiration(query: RequestOptions["query"] = {}): Promise<any> {
