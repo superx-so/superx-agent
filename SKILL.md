@@ -443,7 +443,7 @@ for attempt in 1 2 3; do
 done
 ```
 
-Rate limits per key: 60 reads/min and 10,000 reads/day; 10 writes/min and 300 writes/day. Every authenticated response carries `X-RateLimit-*` headers; `superx status` shows the current window. On 429 the stderr message includes the retry delay.
+Rate limits are per account owner and scale with the plan: reads, writes, enrichment and feed fetches each have their own per-minute and per-day windows, and media uploads are capped at 100 per key per day. Every authenticated response carries `X-RateLimit-*` headers; `superx status` shows the current window and the AI credit pool. On 429 the stderr message includes the retry delay. Current numbers: https://docs.superx.so/rate-limits
 
 ### Pattern 5: Batch a week of content
 
@@ -464,7 +464,7 @@ superx scheduled:list --status scheduled
 1. **Naive timestamps are rejected (400)**. Always include `Z` or an offset: `2026-08-01T15:00:00Z`, not `2026-08-01T15:00:00`.
 2. **Schedule window**: `--at` must be at least 60 seconds in the future and within 18 months.
 3. **Read-only keys cannot write**: `scheduled:create`/`scheduled:delete` with a read-only key returns 403 `insufficient_scope`. Check `superx me` for the key's scopes.
-4. **Writes are main-account-only**: passing a linked or shared account to `scheduled:create` returns 403 `writes_main_account_only`. Reads accept any account `superx accounts` lists. The exceptions are `context:*` and `queue:set`, which are per-account settings.
+4. **Shared accounts are read-only for writes**: writes work on your main account or any linked account (pass the same `--account` you used to read it). Accounts shared with you by other people return 403 `writes_main_account_only` for post, article, signal and contact-list member writes. `context:*` and `queue:set` are per-account settings that do accept a shared account.
 5. **Images need an upload first**: `--media` takes `object_key`s from `media:upload`, never file paths or URLs. Unknown keys return 400 `invalid_media`; a presign whose bytes were never PUT returns 400 `media_not_uploaded`. Video is not supported.
 6. **Size caps**: max 25 thread parts, 25,000 characters total.
 7. **Rate limited (429)**: `rate_limited` on stderr with a retry delay. Back off; do not hammer.
