@@ -300,10 +300,10 @@ yargs(hideBin(process.argv))
   )
   .command(
     "contacts:get <id>",
-    "Show one person: profile, follower counts and the lists they are in",
+    "Show one person: profile, follower counts and the lists they are in (your known contacts only: engagers, contact-list members, signal leads)",
     (y: Argv) =>
       accountOption(y)
-        .positional("id", { describe: "Numeric X user id (from contacts:list)", type: "string" })
+        .positional("id", { describe: "Numeric X user id (from contacts:list, lists:members or signals:leads)", type: "string" })
         .option("refresh", {
           describe: "Refresh the profile from X when the stored copy is stale (counts against the enrichment limit)",
           type: "boolean",

@@ -146,7 +146,7 @@ superx contacts:replies <contact-id> --sort recent  # One person's reply history
 Sort options: `contacts:list` takes `engagement|replies|reposts`; `contacts:replies` takes `recent|most_liked`.
 
 ```bash
-superx contacts:get <x-user-id>                      # Profile, follower counts, verified state, lists they are in
+superx contacts:get <x-user-id>                      # Profile, follower counts, verified state, lists they are in (known contacts only)
 superx contacts:get <x-user-id> --refresh            # Refresh a stale profile from X (costs an enrichment unit)
 superx contacts:notes <x-user-id>                    # Your private notes about them, newest first
 superx contacts:notes:add <x-user-id> --body "Wants a demo in September"
@@ -155,6 +155,7 @@ superx contacts:notes:delete <x-user-id> <note-id>
 ```
 
 - The id everywhere here is a NUMERIC X user id, from `contacts:list`, `lists:members` or `signals:leads`. `contacts:get` returns the stored profile plus each list the person is in, with the `member_id` that `lists:remove-member` takes.
+- KNOWN CONTACTS ONLY: `contacts:get` and the `contacts:notes*` commands resolve people the account actually knows, meaning anyone who has replied to or reposted its posts, a member of one of its contact lists (manual or system), or a scored signal lead. Any other id returns 404 `contact_not_found`, even one SuperX holds a profile for. This is NOT a general X profile lookup: take ids from `contacts:list`, `lists:members` or `signals:leads` rather than typing one in.
 - `--refresh` is the only path that calls X. Leave it off unless the follower counts have to be current: it counts against the tighter enrichment limit, and the default read is free of it.
 - Notes live inside SuperX and are NEVER posted anywhere. Use them for context you want on the next conversation. A note written through the CLI is attributed to the account you wrote as.
 - Note writes need a key with the write scope; shared accounts are read-only.
@@ -518,9 +519,10 @@ superx scheduled:list --status scheduled
 27. **`queue:set --slots-json` REPLACES the whole schedule** and re-flows queued posts onto the new slots. Read the current slots with `queue:get` first and send the full set. `'[]'` clears every slot and leaves the queue all-custom. `reflow.bailed: true` means the settings saved but no post moved.
 28. **`editor_restricted` (403)**: the account is shared with the key owner with Editor permission. Editors can change queue settings but not context settings. Only the account owner can.
 29. **`lists:add-members` takes ids SuperX already knows**: it does no live lookup, so any id in the response's `not_found` was never added. Add those with `lists:add-member --handle <handle>` one at a time (that path resolves live and costs an enrichment unit).
-30. **Notes written through the API are attributed to the acting account**, not to a separate API identity: `created_by` on a note is the account named by `--account` (your main account when omitted). A note id from a different contact returns 404 `note_not_found`.
-31. **`context:products:replace` REPLACES the whole product list**: products whose url is missing from `--json` are removed. Read `context:products` first, or use `context:products:set` for a single-product edit.
-32. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
+30. **`contacts:get` and `contacts:notes*` are known-contacts only**: they resolve engagers, contact-list members and scored signal leads, and 404 `contact_not_found` on any other id, including ids SuperX has a profile for. Get ids from `contacts:list`, `lists:members` or `signals:leads`; there is no general profile lookup yet.
+31. **Notes written through the API are attributed to the acting account**, not to a separate API identity: `created_by` on a note is the account named by `--account` (your main account when omitted). A note id from a different contact returns 404 `note_not_found`.
+32. **`context:products:replace` REPLACES the whole product list**: products whose url is missing from `--json` are removed. Read `context:products` first, or use `context:products:set` for a single-product edit.
+33. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
 
 ---
 
