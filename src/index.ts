@@ -33,8 +33,18 @@ import {
   signalsPauseAgent,
   signalsResumeAgent,
   signalsDeleteAgent,
+  signalsUpdateAgent,
+  signalsAddSignal,
+  signalsRemoveSignal,
+  signalsFeedback,
 } from "./commands/signals";
-import { engageFeeds, engagePosts } from "./commands/engage";
+import {
+  engageFeeds,
+  engagePosts,
+  engageFeedsCreate,
+  engageFeedsUpdate,
+  engageFeedsDelete,
+} from "./commands/engage";
 import {
   scheduledList,
   scheduledCreate,
@@ -58,6 +68,7 @@ import {
   articlesSchedule,
   articlesUnschedule,
   articlesCover,
+  articlesCoverStyles,
 } from "./commands/articles";
 import {
   contextGet,
@@ -491,6 +502,12 @@ yargs(hideBin(process.argv))
           type: "string",
           array: true,
         })
+        .option("signal", {
+          describe:
+            'Non-keyword signal as "type:target" (repeat the flag). Types: keyword, profile, follower, list. Combined with --keyword, at most 5',
+          type: "string",
+          array: true,
+        })
         .option("idempotency-key", {
           describe: "Idempotency-Key header (max 64 chars); retries with the same key return the original result",
           type: "string",
@@ -502,8 +519,79 @@ yargs(hideBin(process.argv))
         .example(
           '$0 signals:create-agent --name "Agency leads" --icp "Marketing agency owners struggling with reporting"',
           "Create an agent with auto-suggested keywords and an auto-created list"
+        )
+        .example(
+          '$0 signals:create-agent --name "Naval orbit" --icp "..." --signal "profile:@naval" --signal "follower:@naval"',
+          "Create an agent watching an account and its followers"
         ),
     run(signalsCreateAgent)
+  )
+  .command(
+    "signals:update-agent <id>",
+    "Edit a signal agent's name, ICP, precision mode, destination list or status",
+    (y: Argv) =>
+      y
+        .positional("id", { describe: "Agent id (from signals:agents)", type: "number" })
+        .option("name", { describe: "New agent name (max 80 chars)", type: "string" })
+        .option("icp", { describe: "New ideal-customer description (max 500 chars)", type: "string" })
+        .option("precision", {
+          describe: "high = fewer, stricter matches; discovery = broader net",
+          type: "string",
+          choices: ["high", "discovery"],
+        })
+        .option("list-id", {
+          describe: "Contact list id (from lists:list) that receives the leads",
+          type: "string",
+        })
+        .option("status", {
+          describe: "active = resume finding leads; paused = stop",
+          type: "string",
+          choices: ["active", "paused"],
+        })
+        .example('$0 signals:update-agent 3 --icp "Series A founders hiring their first RevOps lead"', "Retune the scoring")
+        .example("$0 signals:update-agent 3 --list-id abc123", "Send new leads to a different list"),
+    run(signalsUpdateAgent)
+  )
+  .command(
+    "signals:add-signal <id>",
+    "Add one thing for an agent to watch (a search, an account, its followers, or an X list)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Agent id (from signals:agents)", type: "number" })
+        .option("type", {
+          describe: "What to watch",
+          type: "string",
+          choices: ["keyword_watch", "profile_watch", "follower_watch", "list_watch"],
+          demandOption: true,
+        })
+        .option("query", { describe: "For keyword_watch: the search description (max 180 chars)", type: "string" })
+        .option("handle", { describe: "For profile_watch / follower_watch: an X username", type: "string" })
+        .option("list", { describe: "For list_watch: a public X list id or x.com/i/lists link", type: "string" })
+        .example('$0 signals:add-signal 3 --type keyword_watch --query "just raised a seed round"', "Watch a search")
+        .example("$0 signals:add-signal 3 --type follower_watch --handle naval", "Watch who an account follows"),
+    run(signalsAddSignal)
+  )
+  .command(
+    "signals:remove-signal <id> <signalId>",
+    "Remove one signal from an agent (leads it already found stay)",
+    (y: Argv) =>
+      y
+        .positional("id", { describe: "Agent id (from signals:agents)", type: "number" })
+        .positional("signalId", { describe: "Signal id (from the agent's signals in signals:agents)", type: "number" }),
+    run(signalsRemoveSignal)
+  )
+  .command(
+    "signals:feedback <leadId>",
+    "Record your verdict on one lead: --fit, --not-fit or --clear",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("leadId", { describe: "Numeric lead id (from signals:leads)", type: "number" })
+        .option("fit", { describe: "Mark the lead a good match", type: "boolean" })
+        .option("not-fit", { describe: "Mark the lead a bad match", type: "boolean" })
+        .option("clear", { describe: "Remove any verdict on the lead", type: "boolean" })
+        .example("$0 signals:feedback 4821 --fit", "Teach the scorer this lead was right")
+        .epilogue("The verdict trains the scorer, so record it on leads you actually reviewed."),
+    run(signalsFeedback)
   )
   .command(
     "signals:pause-agent <id>",
@@ -566,6 +654,54 @@ yargs(hideBin(process.argv))
         .example("$0 engage:posts <feed-id> --mode latest --fresh true", "Newest posts, skipping the cache")
         .example("$0 engage:posts <feed-id> --exclude 1234567890,1234567891", "Next batch, minus the posts you have"),
     run(engagePosts)
+  )
+  .command(
+    "engage:feeds:create",
+    "Save a new Engage feed (keywords, a public X list, or one of your contact lists)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("name", { describe: "Feed name (1-40 chars)", type: "string", demandOption: true })
+        .option("keyword", {
+          describe: "Search term for a keyword feed (repeat the flag, 1-5)",
+          type: "string",
+          array: true,
+        })
+        .option("x-list", {
+          describe: "Public X list id or x.com/i/lists link for an X list feed",
+          type: "string",
+        })
+        .option("list-id", { describe: "Contact list id (from lists:list) for a list feed", type: "string" })
+        .example('$0 engage:feeds:create --name "AI builders" --keyword "shipping with LLMs" --keyword "eval harness"', "A keyword feed")
+        .example('$0 engage:feeds:create --name "Founders" --x-list https://x.com/i/lists/1234567890', "A public X list feed")
+        .epilogue(
+          "Use exactly one source. A new feed does not become the feed the SuperX app has open. Up to 8 feeds per account."
+        ),
+    run(engageFeedsCreate)
+  )
+  .command(
+    "engage:feeds:update <feedId>",
+    "Rename an Engage feed, replace what it watches, or both",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("feedId", { describe: "Feed id (from engage:feeds)", type: "string" })
+        .option("name", { describe: "New feed name (1-40 chars)", type: "string" })
+        .option("keyword", {
+          describe: "Replace the feed's keywords (repeat the flag, 1-5)",
+          type: "string",
+          array: true,
+        })
+        .option("x-list", { describe: "Point the feed at this X list id or link", type: "string" })
+        .option("list-id", { describe: "Point the feed at this contact list (from lists:list)", type: "string" })
+        .example('$0 engage:feeds:update <feed-id> --name "AI builders"', "Rename a feed")
+        .epilogue("Change one source at a time; a feed may change type and keeps its id."),
+    run(engageFeedsUpdate)
+  )
+  .command(
+    "engage:feeds:delete <feedId>",
+    "Delete an Engage feed (if it was the open one, the first remaining feed takes over)",
+    (y: Argv) =>
+      accountOption(y).positional("feedId", { describe: "Feed id (from engage:feeds)", type: "string" }),
+    run(engageFeedsDelete)
   )
   .command(
     "scheduled:list",
@@ -1014,17 +1150,28 @@ yargs(hideBin(process.argv))
     run(articlesUnschedule)
   )
   .command(
+    "articles:cover-styles",
+    "List the article cover styles saved in the SuperX app (ids for --style-id)",
+    (y: Argv) => accountOption(y),
+    run(articlesCoverStyles)
+  )
+  .command(
     "articles:cover <id>",
     "Generate an AI cover for an article (60-100s, spends AI credits)",
     (y: Argv) =>
       y
         .positional("id", { describe: "Article id (needs a title)", type: "string" })
         .option("style", { describe: "Style description steering the artwork (max 8000 chars)", type: "string" })
+        .option("style-id", {
+          describe: "Saved cover style id (from articles:cover-styles); not with --style",
+          type: "string",
+        })
         .option("attach", {
           describe: "Attach the result as the article's cover (use --no-attach to skip)",
           type: "boolean",
           default: true,
-        }),
+        })
+        .example("$0 articles:cover abc123 --style-id sty_9f2", "Generate in a saved style"),
     run(articlesCover)
   )
   .command("docs", "Print the SuperX API quickstart (markdown, no auth needed)", {}, run(docs))

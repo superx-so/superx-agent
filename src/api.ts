@@ -292,8 +292,26 @@ export class SuperXAPI {
     return (await this.request(`/signals/agents/${id}`, { method: "PATCH", body: { status } })).json;
   }
 
+  /** Edit an agent's name, ICP, precision mode, destination list or status. */
+  async updateSignalAgent(id: number, body: unknown): Promise<any> {
+    return (await this.request(`/signals/agents/${id}`, { method: "PATCH", body })).json;
+  }
+
   async deleteSignalAgent(id: number): Promise<any> {
     return (await this.request(`/signals/agents/${id}`, { method: "DELETE" })).json;
+  }
+
+  async addSignalAgentSignal(id: number, body: unknown): Promise<any> {
+    return (await this.request(`/signals/agents/${id}/signals`, { method: "POST", body })).json;
+  }
+
+  async removeSignalAgentSignal(id: number, signalId: number): Promise<any> {
+    return (await this.request(`/signals/agents/${id}/signals/${signalId}`, { method: "DELETE" })).json;
+  }
+
+  /** Record (or clear, with null) the verdict on one lead. */
+  async setLeadFeedback(leadId: number, body: unknown): Promise<any> {
+    return (await this.request(`/signals/leads/${leadId}/feedback`, { method: "POST", body })).json;
   }
 
   // --- Engage ---
@@ -304,6 +322,18 @@ export class SuperXAPI {
 
   async getEngageFeedPosts(feedId: string, query: RequestOptions["query"] = {}): Promise<any> {
     return (await this.request(`/engage/feeds/${encodeURIComponent(feedId)}/posts`, { query })).json;
+  }
+
+  async createEngageFeed(body: unknown): Promise<any> {
+    return (await this.request("/engage/feeds", { method: "POST", body })).json;
+  }
+
+  async updateEngageFeed(feedId: string, body: unknown): Promise<any> {
+    return (await this.request(`/engage/feeds/${encodeURIComponent(feedId)}`, { method: "PATCH", body })).json;
+  }
+
+  async deleteEngageFeed(feedId: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/engage/feeds/${encodeURIComponent(feedId)}`, { method: "DELETE", query })).json;
   }
 
   // --- Scheduled posts ---
@@ -458,6 +488,11 @@ export class SuperXAPI {
 
   async generateArticleCover(id: string, body: unknown): Promise<any> {
     return (await this.request(`/articles/${encodeURIComponent(id)}/cover`, { method: "POST", body })).json;
+  }
+
+  /** Saved article cover styles (pass an id as style_id to the cover call). */
+  async listCoverStyles(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/cover-styles", { query })).json;
   }
 
   // --- Docs (unauthenticated markdown) ---

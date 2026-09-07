@@ -134,14 +134,25 @@ export async function articlesUnschedule(argv: { id: string }): Promise<void> {
   printJson(await api.unscheduleArticle(argv.id));
 }
 
+export async function articlesCoverStyles(argv: { account?: string }): Promise<void> {
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.listCoverStyles({ account_id: argv.account }));
+}
+
 export async function articlesCover(argv: {
   id: string;
   style?: string;
+  "style-id"?: string;
   attach?: boolean;
 }): Promise<void> {
+  if (argv.style !== undefined && argv["style-id"] !== undefined) {
+    note("Use either --style or --style-id, not both.");
+    process.exit(1);
+  }
   note("Generating a cover image. This spends AI credits and can take 60-100 seconds...");
   const body: Record<string, unknown> = {};
   if (argv.style !== undefined) body.style_text = argv.style;
+  if (argv["style-id"] !== undefined) body.style_id = argv["style-id"];
   if (argv.attach === false) body.attach = false;
 
   const api = new SuperXAPI(getConfig());

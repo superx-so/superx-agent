@@ -1,6 +1,6 @@
 ---
 name: superx
-description: SuperX is a Twitter/X growth tool. Use it to read an account's published posts with engagement metrics, pull account analytics (impressions, likes, replies, follower change), find the people who engage with the account most, review reply history in both directions (sent and received), manage contact lists, create and manage signal agents (automated lead finders) and review the leads they discover, search a library of 50M+ high-performing posts for inspiration, read the Engage feed posts a saved feed surfaces for review, create, edit, tag, or schedule draft posts and threads (with image attachments), write, schedule, publish, and generate AI covers for long-form X Articles, and read or update the account's Context settings (profile description, interests, SuperX rules, reply settings, favorite creators, style guide, products) that steer SuperX's AI writing, all through the SuperX API.
+description: SuperX is a Twitter/X growth tool. Use it to read an account's published posts with engagement metrics, pull account analytics (impressions, likes, replies, follower change), find the people who engage with the account most, review reply history in both directions (sent and received), manage contact lists, create and manage signal agents (automated lead finders), add or remove the signals they watch, and review the leads they discover, marking each one fit or not fit, search a library of 50M+ high-performing posts for inspiration, create, edit, and delete saved Engage feeds and read the posts they surface for review, create, edit, tag, or schedule draft posts and threads (with image attachments), write, schedule, publish, and generate AI covers for long-form X Articles (in one of the account's saved cover styles), and read or update the account's Context settings (profile description, interests, SuperX rules, reply settings, favorite creators, style guide, products) that steer SuperX's AI writing, all through the SuperX API.
 homepage: https://docs.superx.so
 metadata: {"openclaw":{"emoji":"🚀","requires":{"bins":["superx"],"env":[]}}}
 ---
@@ -194,9 +194,20 @@ superx engage:posts <feed-id> --limit 50             # one big page of candidate
 superx engage:posts <feed-id> --mode latest --fresh true         # newest, skipping the cache
 superx engage:posts <feed-id> --exclude 1234567890,1234567891    # next batch, minus what you have
 superx engage:posts <feed-id> --include-replied true             # keep posts already replied to
+
+# Feed writes (write scope; main or linked account via --account)
+superx engage:feeds:create --name "AI builders" --keyword "shipping with LLMs" --keyword "eval harness"
+superx engage:feeds:create --name "Founders" --x-list https://x.com/i/lists/1234567890
+superx engage:feeds:create --name "Prospects" --list-id <contact-list-id>
+superx engage:feeds:update <feed-id> --name "AI builders v2"
+superx engage:feeds:delete <feed-id>
 ```
 
-- Engage feeds are the keyword and list feeds the user set up in the app's Engage tab. `engage:feeds` gives each feed's `id`, `name`, `type` (`keywords`, `list`, `x_list`), `active`, and `fetch_units`. Feeds are created and edited in the app; the API only reads them.
+- Engage feeds are the keyword and list feeds the user set up in the app's Engage tab. `engage:feeds` gives each feed's `id`, `name`, `type` (`keywords`, `list`, `x_list`), `active`, and `fetch_units`.
+- Feeds can be created, renamed, repointed and deleted here. Give `engage:feeds:create` a `--name` (1-40 chars) and exactly ONE source: repeatable `--keyword` (1-5), `--x-list` (a public X list id or `x.com/i/lists/...` link), or `--list-id` (one of the user's contact lists from `lists:list`).
+- A feed you create does NOT become the feed the app has open: the person keeps their place. Tell them where to find the new feed rather than assuming they will see it.
+- Up to 8 feeds per account (409 `feed_limit_reached` beyond that). `engage:feeds:update` changes one source at a time and keeps the feed's id, so a feed may switch type. Deleting the feed the app has open hands the slot to the first remaining feed.
+- An X list source is looked up live: those calls also draw on the tighter enrichment allowance, and a private list is a 404 `x_list_not_found`. Keyword and contact-list feeds cost no enrichment.
 - `engage:posts` returns candidate posts (text, author handle/bio/follower counts, engagement metrics, post time) plus `has_more` and the `feed`. Score and shortlist them for the user.
 - READ-ONLY BY DESIGN: there is no reply command. Replies are written and sent by a person in SuperX. Sending replies that read as inauthentic can get an X account suspended and a SuperX account terminated; AI output must be reviewed and meaningfully edited by a person before it is posted. Surface candidates and draft suggestions for the user; never claim a reply was sent.
 - `--limit` (1-50, default 20) applies to KEYWORD feeds. List feeds return one page per fetch (about 10 posts for a member list, 20 to 25 for an imported X list) and `--limit` only trims it. Page a list feed with `--exclude` (at most 100 ids per call; window the list to the most recent ids), not a bigger `--limit`.
@@ -218,14 +229,35 @@ superx signals:create-agent \
   --icp "Indie founders building SaaS in public, sharing MRR and launches" \
   --keyword "building in public" --keyword "just shipped my MVP"
 
+# Watch an account and its followers as well as keywords
+superx signals:create-agent --name "Naval orbit" --icp "..." \
+  --signal "profile:@naval" --signal "follower:@naval"
+
 # Lifecycle (agent id from signals:agents)
+superx signals:update-agent 3 --icp "Series A founders hiring their first RevOps lead"
+superx signals:update-agent 3 --list-id <contact-list-id>
 superx signals:pause-agent 3
 superx signals:resume-agent 3
 superx signals:delete-agent 3
+
+# Signals on an existing agent (signal id from the agent's signals in signals:agents)
+superx signals:add-signal 3 --type keyword_watch --query "just raised a seed round"
+superx signals:add-signal 3 --type follower_watch --handle naval
+superx signals:add-signal 3 --type list_watch --list https://x.com/i/lists/1234567890
+superx signals:remove-signal 3 118
+
+# Teach the scorer (lead id from signals:leads, NOT an X user id)
+superx signals:feedback 4821 --fit
+superx signals:feedback 4821 --not-fit
+superx signals:feedback 4821 --clear
 ```
 
-- Signal agents are automated lead finders: they watch profiles, followers, keywords, or lists and score people against an ideal customer profile. The API creates keyword-watch agents and pauses, resumes, or deletes any agent; name/ICP/precision/destination edits happen in the app.
-- `signals:create-agent` requires `--name` (max 80) and `--icp` (max 500). Repeat `--keyword` for 1-5 plain-language watches ("what does the target customer post about"); omit it and 1-3 are auto-suggested from the ICP. Omit `--list-id` and a contact list named `Leads: <agent name>` is created for the leads (`destination_list_created: true` in the response). `--precision high|discovery` defaults to high. Supports `--idempotency-key`.
+- Signal agents are automated lead finders: they watch profiles, followers, keywords, or lists and score people against an ideal customer profile. All four watch types, agent edits, signal add/remove and lead feedback work from here.
+- `signals:create-agent` requires `--name` (max 80) and `--icp` (max 500). Repeat `--keyword` for plain-language searches ("what does the target customer post about"), and repeat `--signal "type:target"` for the other kinds (`profile:@handle`, `follower:@handle`, `list:<id or x.com/i/lists link>`, `keyword:<search>`). Keywords and signals combined are 1-5 entries; omit both and 1-3 keywords are auto-suggested from the ICP. Omit `--list-id` and a contact list named `Leads: <agent name>` is created for the leads (`destination_list_created: true` in the response). `--precision high|discovery` defaults to high. Supports `--idempotency-key`.
+- A create is PARTIAL SUCCESS: entries the add path rejects come back in `warnings` (each with its `type`, `target` and a `code` such as `user_not_found`, `x_list_not_found`, `duplicate_signal`, `cap_reached`) and the agent is still created with the entries that landed. Check `warnings` and re-add the fixed ones with `signals:add-signal`; never report a mistyped handle as watched.
+- `signals:update-agent <id>` changes `--name`, `--icp`, `--precision`, `--list-id` or `--status`. Editing the ICP changes how NEW leads are scored; leads already found keep their scores. An unusable `--list-id` is a 404 `list_not_found`.
+- `signals:add-signal` takes one target per call. Each plan caps how many signals one agent may hold (403 `cap_reached`), an agent may watch each target once (409 `duplicate_signal`), and handle/list adds are resolved live so they also draw on the enrichment allowance. `signals:remove-signal` keeps the leads that signal already found; removing the last signal is allowed and leaves the agent finding nothing.
+- `signals:feedback` records the user's verdict and teaches the scorer, so ASK before deciding for them: a wrong verdict skews which leads the agent brings next. The verdict is also mirrored onto the person's row in the agent's destination list, and shows up as `feedback`/`feedback_at` on `signals:leads`.
 - Creation returns immediately, but leads arrive ASYNCHRONOUSLY: the agent finds people over the following minutes and days. Never promise instant results; check `signals:leads` later.
 - Deleting an agent keeps its saved leads and its contact list.
 - Each lead carries the person's profile, `icp_score` and `icp_rationale` (why they matched), `deposited`/`deposited_at` (whether it has been saved to the agent's contact list yet), `discovered_at`, and `provenance` (how it was found: the action, the watched handle, the triggering post text).
@@ -449,13 +481,16 @@ superx articles:publish <article-id>              # LIVE NOW, irreversible, need
 superx articles:delete <article-id>
 
 # AI cover (60-100s, spends AI credits against daily/monthly caps)
+superx articles:cover-styles                      # styles saved in the app, with their ids
 superx articles:cover <article-id>
+superx articles:cover <article-id> --style-id <style-id>          # render in a saved style
 superx articles:cover <article-id> --style "dark, minimal, geometric" --no-attach
 ```
 
 - Publishing and scheduling spend post quota; the article needs a title and some content first.
 - X enforces its own article limits (10 drafts/day, 5 publishes/day) and requires X Premium; those surface as publish failures.
 - `articles:cover` generates from the article's TITLE. Attach is the default; `--no-attach` keeps the current cover and you can attach later with `articles:update --cover-url`.
+- Steer the look with `--style-id` (one of the styles the user saved in the app, listed by `articles:cover-styles`) or `--style` (a one-off description), never both: passing both is a 400. An unknown style id is a 404 `cover_style_not_found`. Styles are saved and deleted in the app.
 - A publish timeout is AMBIGUOUS: run `articles:get` and check `status` before retrying.
 
 ### Docs
@@ -568,6 +603,11 @@ superx scheduled:list --status scheduled
 34. **The bulk commands only touch QUEUED posts**: `scheduled:bulk-retime`, `scheduled:bulk-auto-retweet` and `scheduled:bulk-delete` skip drafts, sent posts and error rows, and `bulk-auto-retweet` also skips posts that already have an auto retweet. They answer with counts, so compare against `scheduled:list` rather than assuming every id was applied.
 35. **`replies:list` page 1 can carry `metrics_pending` items**: replies sent from the SuperX app in the last 4 hours are merged in with zero metrics until X reports them, so page 1 can hold slightly more items than `--limit`. Later pages and `--since`/`--until` queries never include them.
 36. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
+37. **A feed you create is not the feed the app has open**: `engage:feeds:create` saves the feed but never switches the person's view. Tell them where to find it. The cap is 8 feeds (409 `feed_limit_reached`), `engage:feeds:update` takes one source at a time, and deleting the open feed hands the slot to the first remaining one.
+38. **An X list feed or signal costs enrichment and needs a PUBLIC list**: `engage:feeds:create --x-list`, `engage:feeds:update --x-list` and `signals:add-signal --type list_watch` each spend one enrichment unit and 404 `x_list_not_found` on a private or deleted list. Keyword and contact-list sources cost none.
+39. **`signals:create-agent` is partial success**: entries that fail come back in `warnings` with a `code`, and the agent is still created from the ones that landed. Read `warnings` before telling the user what the agent watches; re-add fixed entries with `signals:add-signal`.
+40. **`signals:feedback` takes the numeric LEAD id from `signals:leads`, not an X user id**, and it trains the scorer. Ask the user for the verdict rather than inferring one. An id from another account returns 404 `lead_not_found`; a repeated `signals:remove-signal` returns 404 `signal_not_found`.
+41. **`articles:cover --style-id` and `--style` are mutually exclusive** (400 if both are sent). Style ids come from `articles:cover-styles`; an unknown one returns 404 `cover_style_not_found`.
 
 ---
 
@@ -617,8 +657,19 @@ superx lists:delete <list-id>                            # List + membership; th
 superx lists:add-members <list-id> --x-user-ids 44196397,944883311    # <=500, ids SuperX knows
 superx lists:remove-members <list-id> --member-ids m1abc,m2def        # <=500
 
+# Engage feed writes (main or linked account)
+superx engage:feeds:create --name "AI builders" --keyword "shipping with LLMs"
+superx engage:feeds:create --name "Founders" --x-list https://x.com/i/lists/1234567890
+superx engage:feeds:update <feed-id> --name "AI builders v2"
+superx engage:feeds:delete <feed-id>
+
 # Signal agent writes (main or linked account)
 superx signals:create-agent --name "..." --icp "..." --keyword "..."   # Lead finder
+superx signals:create-agent --name "..." --icp "..." --signal "profile:@naval"
+superx signals:update-agent <id> --icp "..." --list-id <contact-list-id>
+superx signals:add-signal <id> --type follower_watch --handle naval
+superx signals:remove-signal <id> <signal-id>
+superx signals:feedback <lead-id> --fit                # or --not-fit / --clear
 superx signals:pause-agent <id>
 superx signals:resume-agent <id>
 superx signals:delete-agent <id>
@@ -659,7 +710,9 @@ superx articles:update <id> --file v2.md
 superx articles:schedule <id> --at "2026-08-01T15:00:00Z"
 superx articles:unschedule <id>
 superx articles:publish <id>
+superx articles:cover-styles
 superx articles:cover <id> --style "minimal"
+superx articles:cover <id> --style-id <style-id>
 superx articles:delete <id>
 
 # Context settings (AI writing background)
