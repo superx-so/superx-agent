@@ -319,7 +319,7 @@ yargs(hideBin(process.argv))
   )
   .command(
     "contacts:notes:add <id>",
-    "Write a private note about one person (never posted anywhere)",
+    "Write a private note about one person (never posted anywhere; known contacts only: engagers, contact-list members, signal leads)",
     (y: Argv) =>
       accountOption(y)
         .positional("id", { describe: "Numeric X user id", type: "string" })
