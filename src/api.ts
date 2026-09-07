@@ -319,6 +319,34 @@ export class SuperXAPI {
     return { json: res.json, replayed: res.headers.get("idempotency-replayed") === "true" };
   }
 
+  /**
+   * Publish immediately: the create endpoint with scheduled_for "now". The
+   * Idempotency-Key is REQUIRED by the API (a retry must never post twice),
+   * so it is a plain parameter here rather than an optional one.
+   */
+  async publishNow(body: unknown, idempotencyKey: string): Promise<{ json: any; replayed: boolean }> {
+    const res = await this.request("/scheduled-posts", {
+      method: "POST",
+      body,
+      headers: { "Idempotency-Key": idempotencyKey },
+    });
+    return { json: res.json, replayed: res.headers.get("idempotency-replayed") === "true" };
+  }
+
+  // --- Scheduled posts: bulk queue operations ---
+
+  async bulkRetimeScheduled(body: unknown): Promise<any> {
+    return (await this.request("/scheduled-posts/bulk/retime", { method: "POST", body })).json;
+  }
+
+  async bulkEnableAutoRetweet(body: unknown): Promise<any> {
+    return (await this.request("/scheduled-posts/bulk/auto-retweet", { method: "POST", body })).json;
+  }
+
+  async bulkDeleteScheduled(body: unknown): Promise<any> {
+    return (await this.request("/scheduled-posts/bulk/delete", { method: "POST", body })).json;
+  }
+
   async updateScheduled(id: string, body: unknown): Promise<any> {
     return (await this.request(`/scheduled-posts/${encodeURIComponent(id)}`, { method: "PATCH", body })).json;
   }

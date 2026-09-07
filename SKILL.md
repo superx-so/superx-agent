@@ -32,7 +32,7 @@ official website: https://superx.so
 
 **Rule 2: Read PLAYBOOK.md before creating any content.** This repo ships a growth strategy guide (`PLAYBOOK.md`, also inside the installed npm package). It tells you WHAT to post, WHEN, and WHY: the action hierarchy, out-of-network discovery, the engagement loop, and the failure modes that kill reach. The CLI gives you data and actions; the playbook gives you judgment. Do not schedule content without it.
 
-**Rule 3: Know the write constraints.** `scheduled:create` without `--at` creates a DRAFT (nothing publishes). With `--at` it schedules for that time. `scheduled:update` changes only the flags you pass, and a new `--at` alone never schedules a draft; add `--status scheduled` to promote. Writes work on your main account or any linked account (pass the same `--account` you used to read it); accounts shared with you by other people are read-only, and tags are workspace-wide. Images attach via `media:upload` then `--media` (JPG/PNG/WEBP up to 5MB, GIF up to 15MB; max 4 images or 1 GIF per post); video is not supported. Timestamps MUST be UTC ISO-8601 with an explicit `Z` or offset; naive timestamps are rejected with 400. `articles:publish` posts a long-form article to X IMMEDIATELY and irreversibly; treat it like hitting Publish in public and get human confirmation unless the user already gave it. `posts:draft` writes post text in the user's voice and saves NOTHING: show the drafts, let the user pick and edit one, then pass the final text to `scheduled:create` yourself; it costs AI credits per draft, so ask for the count the user actually wants.
+**Rule 3: Know the write constraints.** `scheduled:create` without `--at` creates a DRAFT (nothing publishes). With `--at` it schedules for that time. `scheduled:update` changes only the flags you pass, and a new `--at` alone never schedules a draft; add `--status scheduled` to promote. Writes work on your main account or any linked account (pass the same `--account` you used to read it); accounts shared with you by other people are read-only, and tags are workspace-wide. Images attach via `media:upload` then `--media` (JPG/PNG/WEBP up to 5MB, GIF up to 15MB; max 4 images or 1 GIF per post); video is not supported. Timestamps MUST be UTC ISO-8601 with an explicit `Z` or offset; naive timestamps are rejected with 400. `posts:publish` and `articles:publish` post to X IMMEDIATELY and irreversibly; treat them like hitting Publish in public and get human confirmation of the exact text unless the user already gave it. `posts:publish` also requires `--idempotency-key`, which you reuse verbatim on any retry. `posts:draft` writes post text in the user's voice and saves NOTHING: show the drafts, let the user pick and edit one, then pass the final text to `scheduled:create` yourself; it costs AI credits per draft, so ask for the count the user actually wants.
 
 ---
 
@@ -273,6 +273,48 @@ superx scheduled:delete <post-id>
 - Replays add `"replayed": true` to the JSON output and print a stderr note.
 - `scheduled:list` filters: `--status draft,scheduled,sent,error` (comma list), `--tags id,id` (any-of), `--from/--to` bounds on the scheduled time.
 - `media:upload` accepts JPG/PNG/WEBP (5MB) and GIF (15MB); a post part carries up to 4 images OR exactly 1 GIF. Uploads are capped at 100/day and expire after 24h if never attached.
+
+### Publishing now (irreversible)
+
+```bash
+# Publishes to X the moment this returns. --idempotency-key is REQUIRED.
+superx posts:publish --text "Post text" --idempotency-key "launch-2026-09-07"
+
+# Thread, same shape as scheduled:create
+superx posts:publish --part "1/ The hook" --part "2/ The close" --idempotency-key "thread-42"
+
+# With an image and an auto retweet
+KEY=$(superx media:upload ./chart.png | jq -r '.object_key')
+superx posts:publish --text "Chart of the week" --media "$KEY" --alt-text "Weekly revenue line chart" \
+  --auto-retweet 6 --idempotency-key "chart-2026-09-07"
+```
+
+- **Get explicit human confirmation of the exact text before running this.** It cannot be undone: the post is live on X. Use `scheduled:create --at` for anything that can wait, and `posts:draft` when the user still wants to review wording.
+- `--idempotency-key` is required and is yours to choose. Reuse the SAME key on a retry: it returns the original result instead of posting again. Only use a new key for genuinely new content.
+- On a timeout, retry with the SAME key. A retry inside the publish window returns 409 `idempotency_in_flight` with a `Retry-After` delay; after that the API checks whether the first attempt landed and replays its result rather than posting twice.
+- No `--at`, `--title` or `--scratchpad`: a published post has no draft to organize (passing them returns 400).
+- The result carries `status: "sent"`, `posted_at`, `x_post_id` and `url`.
+- Advanced settings and Auto DM inherit the account's Default Post Settings exactly like `scheduled:create`; the `--no-*` forms turn one off for this post.
+
+### Bulk queue operations
+
+```bash
+# Move queued posts to new times (up to 500, one transaction: all or none)
+superx scheduled:bulk-retime --moves-json '[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]'
+
+# Turn Auto Retweet on for posts that do not have it (up to 100)
+superx scheduled:bulk-auto-retweet --ids abc,def --auto-retweet 6 --auto-retweet-remove 4
+
+# Delete queued posts and refund their post quota (up to 100)
+superx scheduled:bulk-delete --ids abc,def
+```
+
+- All three touch **queued posts only**. Drafts, sent posts and error rows are counted in `skipped` and are never retimed or deleted, so `updated` / `deleted` can be lower than the number of ids you sent. Delete a draft with `scheduled:delete <id>`.
+- `bulk-auto-retweet` never overwrites a post's existing auto retweet; those posts land in `skipped`.
+- GOTCHA: posts you create through the CLI inherit the account's Default Post Settings, so if Auto Retweet is on there they ALREADY have one and `bulk-auto-retweet` reports every id as `skipped`. Create them with `--no-auto-retweet`, or clear it per post with `scheduled:update <id> --no-auto-retweet`, before bulk-applying a different one.
+- Each `scheduled_for` follows the normal window: at least 60 seconds ahead, within 18 months.
+- The responses are COUNTS, not per-post results. Re-read with `scheduled:list` to see the new state.
+- No idempotency key: re-running the same call converges (a retime to the same time is a no-op, an already-deleted id is skipped).
 
 ### Editing drafts and scheduled posts
 
@@ -522,7 +564,10 @@ superx scheduled:list --status scheduled
 30. **`contacts:get` and `contacts:notes:add` are known-contacts only**: they resolve engagers, contact-list members and scored signal leads, and 404 `contact_not_found` on any other id, including ids SuperX has a profile for. Get ids from `contacts:list`, `lists:members` or `signals:leads`; there is no general profile lookup yet. `contacts:notes`, `contacts:notes:update` and `contacts:notes:delete` are NOT restricted: they work on any id you already have a note on, so notes stay reachable after someone drops out of your contacts.
 31. **Notes written through the API are attributed to the acting account**, not to a separate API identity: `created_by` on a note is the account named by `--account` (your main account when omitted). A note id from a different contact returns 404 `note_not_found`.
 32. **`context:products:replace` REPLACES the whole product list**: products whose url is missing from `--json` are removed. Read `context:products` first, or use `context:products:set` for a single-product edit.
-33. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
+33. **`posts:publish` is irreversible and needs `--idempotency-key`**: it posts to X immediately. Confirm the exact text with the user first. Without the key the command exits 1; on a timeout retry with the SAME key (409 `idempotency_in_flight` means the first attempt is still running, so wait for the `Retry-After` delay and retry that same key again). `--at`, `--title` and `--scratchpad` are rejected.
+34. **The bulk commands only touch QUEUED posts**: `scheduled:bulk-retime`, `scheduled:bulk-auto-retweet` and `scheduled:bulk-delete` skip drafts, sent posts and error rows, and `bulk-auto-retweet` also skips posts that already have an auto retweet. They answer with counts, so compare against `scheduled:list` rather than assuming every id was applied.
+35. **`replies:list` page 1 can carry `metrics_pending` items**: replies sent from the SuperX app in the last 4 hours are merged in with zero metrics until X reports them, so page 1 can hold slightly more items than `--limit`. Later pages and `--since`/`--until` queries never include them.
+36. **`engage:posts --limit` is keyword-feeds only**: list feeds return one page of about 10 to 25 posts per fetch, so page them with `--exclude` (the ids you already have, at most 100 per call), not a bigger `--limit`. Each plan also has a daily feed-fetch allowance (separate from reads) and a list feed that rotates its members counts as 3 fetches, so fetch big pages a few times a day rather than polling. Posts a fetch returns count as seen and are demoted in later fetches, in the app as well as here.
 
 ---
 
@@ -591,6 +636,14 @@ superx scheduled:update <id> --at "..." --status scheduled             # Promote
 superx scheduled:list --status draft,scheduled
 superx scheduled:list --tags <tag-id>
 superx scheduled:delete <id>
+
+# Publish NOW (irreversible; key required, reuse it on a retry)
+superx posts:publish --text "Post" --idempotency-key k1
+
+# Bulk queue operations (queued posts only; answers are counts)
+superx scheduled:bulk-retime --moves-json '[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]'
+superx scheduled:bulk-auto-retweet --ids abc,def --auto-retweet 6
+superx scheduled:bulk-delete --ids abc,def
 
 # Tags
 superx tags:list

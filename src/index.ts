@@ -35,7 +35,17 @@ import {
   signalsDeleteAgent,
 } from "./commands/signals";
 import { engageFeeds, engagePosts } from "./commands/engage";
-import { scheduledList, scheduledCreate, scheduledUpdate, scheduledDelete, plugTemplatesList } from "./commands/scheduled";
+import {
+  scheduledList,
+  scheduledCreate,
+  scheduledUpdate,
+  scheduledDelete,
+  plugTemplatesList,
+  postsPublish,
+  scheduledBulkRetime,
+  scheduledBulkAutoRetweet,
+  scheduledBulkDelete,
+} from "./commands/scheduled";
 import { mediaUpload } from "./commands/media";
 import { tagsList, tagsCreate, tagsUpdate, tagsDelete } from "./commands/tags";
 import {
@@ -688,6 +698,75 @@ yargs(hideBin(process.argv))
     "Delete a draft or scheduled post by id",
     (y: Argv) => y.positional("id", { describe: "Post id (from scheduled:list or scheduled:create)", type: "string" }),
     run(scheduledDelete)
+  )
+  .command(
+    "posts:publish",
+    "Publish a post or thread to X RIGHT NOW (irreversible; --idempotency-key required)",
+    (y: Argv) =>
+      advancedSettingsOptions(accountOption(y))
+        .option("text", { describe: "Text for a single post", type: "string" })
+        .option("part", {
+          describe: "Thread part text (repeat the flag, 1-25 parts, in order)",
+          type: "string",
+          array: true,
+        })
+        .option("media", {
+          describe: "Comma list of image object_keys (from media:upload) to attach; single-post form only (max 4 images or 1 GIF)",
+          type: "string",
+        })
+        .option("alt-text", {
+          describe: "Accessibility description for the attached image (single --media key only, max 1000 chars)",
+          type: "string",
+        })
+        .option("parts-json", {
+          describe: 'Full parts array as JSON for threads with media: [{"text":"...","media":[{"object_key":"...","alt_text":"..."}]}]',
+          type: "string",
+        })
+        .option("tag", {
+          describe: "Tag id to assign (repeat the flag, max 20; ids from tags:list)",
+          type: "string",
+          array: true,
+        })
+        .option("idempotency-key", {
+          describe: "REQUIRED (max 64 chars). Reuse the SAME key when retrying so a timed-out call cannot post twice; use a new key only for new content",
+          type: "string",
+        })
+        .example('$0 posts:publish --text "Shipping now." --idempotency-key launch-2026-09-07', "Publish a single post")
+        .example('$0 posts:publish --part "1/ Hook" --part "2/ Detail" --idempotency-key thread-42', "Publish a thread")
+        .example('$0 posts:publish --text "Shipping now." --auto-retweet 6 --idempotency-key launch-2026-09-07', "Publish with an auto retweet"),
+    run(postsPublish)
+  )
+  .command(
+    "scheduled:bulk-retime",
+    "Move up to 500 queued posts to new times in one transaction",
+    (y: Argv) =>
+      accountOption(y)
+        .option("moves-json", {
+          describe: 'Moves as JSON: [{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}] (max 500, each time 60s+ ahead)',
+          type: "string",
+        })
+        .example('$0 scheduled:bulk-retime --moves-json \'[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]\'', "Retime one queued post"),
+    run(scheduledBulkRetime)
+  )
+  .command(
+    "scheduled:bulk-auto-retweet",
+    "Turn Auto Retweet on for up to 100 queued posts that do not have it yet",
+    (y: Argv) =>
+      accountOption(y)
+        .option("ids", { describe: "Comma list of post ids (max 100, from scheduled:list)", type: "string" })
+        .option("auto-retweet", { describe: "Retweet each post this many hours after it goes live (1-12), required" })
+        .option("auto-retweet-remove", { describe: "Remove the retweet this many hours later (1-12)" })
+        .example('$0 scheduled:bulk-auto-retweet --ids abc,def --auto-retweet 6', "Auto retweet two queued posts after 6 hours"),
+    run(scheduledBulkAutoRetweet)
+  )
+  .command(
+    "scheduled:bulk-delete",
+    "Delete up to 100 QUEUED posts and refund their post quota (sent posts and drafts are left alone)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("ids", { describe: "Comma list of post ids (max 100, from scheduled:list)", type: "string" })
+        .example('$0 scheduled:bulk-delete --ids abc,def', "Delete two queued posts"),
+    run(scheduledBulkDelete)
   )
   .command(
     "plug-templates:list",

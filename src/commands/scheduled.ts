@@ -331,3 +331,161 @@ export async function scheduledDelete(argv: { id: string }): Promise<void> {
   const api = new SuperXAPI(getConfig());
   printJson(await api.deleteScheduled(argv.id));
 }
+
+/**
+ * posts:publish — publish to X immediately (POST /v1/scheduled-posts with
+ * scheduled_for "now"). Same content and advanced-settings flags as
+ * scheduled:create, minus the draft-only ones (--at, --title, --scratchpad).
+ *
+ * --idempotency-key is REQUIRED: publishing cannot be undone, and reusing the
+ * same key on a retry is what stops a timed-out call from posting twice.
+ */
+export async function postsPublish(argv: AdvancedFlagArgs & {
+  text?: string;
+  part?: string[];
+  "parts-json"?: string;
+  media?: string;
+  "alt-text"?: string;
+  tag?: string[];
+  account?: string;
+  "idempotency-key"?: string;
+}): Promise<void> {
+  const idempotencyKey = argv["idempotency-key"];
+  if (typeof idempotencyKey !== "string" || idempotencyKey.length === 0) {
+    note("--idempotency-key is required for posts:publish. Reuse the SAME key when retrying; only use a new key for new content.");
+    process.exit(1);
+    return;
+  }
+
+  const parts = (argv.part || []).filter((p) => typeof p === "string");
+  const sourceCount = [argv.text, parts.length > 0 ? "p" : undefined, argv["parts-json"]].filter(
+    (v) => v !== undefined
+  ).length;
+  if (sourceCount > 1) {
+    note("Use exactly one of --text (single post), --part (thread), or --parts-json.");
+    process.exit(1);
+  }
+  if (sourceCount === 0) {
+    note("Provide --text for a single post, --part flags for a thread, or --parts-json.");
+    process.exit(1);
+  }
+  if (argv.media !== undefined && !argv.text) {
+    note("--media applies to the --text single-post form. For threads, put media in --parts-json.");
+    process.exit(1);
+  }
+
+  const body: Record<string, unknown> = { scheduled_for: "now" };
+  if (argv["parts-json"] !== undefined) {
+    body.parts = parsePartsJson(argv["parts-json"]);
+  } else if (argv.text) {
+    const media = mediaFromFlags(argv.media, argv["alt-text"]);
+    if (media) {
+      body.parts = [{ text: argv.text, media }];
+    } else {
+      body.text = argv.text;
+    }
+  } else {
+    body.parts = parts.map((text) => ({ text }));
+  }
+  const tags = (argv.tag || []).filter((t) => typeof t === "string" && t.length > 0);
+  if (tags.length > 0) body.tags = tags;
+  applyAdvancedFlags(argv, body);
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  const { json, replayed } = await api.publishNow(body, idempotencyKey);
+
+  if (replayed) {
+    note("Idempotency replay: this key was already published; returning the original result. Nothing was posted twice.");
+    printJson({ ...json, replayed: true });
+    return;
+  }
+  printJson(json);
+}
+
+/** Parse a comma list of ids into a deduped array, exiting on an empty list. */
+function idsFromFlag(name: string, raw?: string): string[] {
+  const ids = (raw || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (ids.length === 0) {
+    note(`--${name} must be a comma list of post ids (from scheduled:list).`);
+    process.exit(1);
+  }
+  return Array.from(new Set(ids));
+}
+
+export async function scheduledBulkRetime(argv: {
+  "moves-json"?: string;
+  account?: string;
+}): Promise<void> {
+  const raw = argv["moves-json"];
+  if (typeof raw !== "string" || raw.length === 0) {
+    note('--moves-json is required, e.g. \'[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]\'');
+    process.exit(1);
+    return;
+  }
+  let moves: unknown;
+  try {
+    moves = JSON.parse(raw);
+  } catch {
+    note('--moves-json must be valid JSON, e.g. \'[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]\'');
+    process.exit(1);
+    return;
+  }
+  if (
+    !Array.isArray(moves) ||
+    moves.length === 0 ||
+    moves.some((m: any) => !m || typeof m !== "object" || typeof m.id !== "string" || typeof m.scheduled_for !== "string")
+  ) {
+    note("--moves-json must be a non-empty array of { id, scheduled_for } objects.");
+    process.exit(1);
+  }
+
+  const body: Record<string, unknown> = { moves };
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.bulkRetimeScheduled(body));
+}
+
+export async function scheduledBulkAutoRetweet(argv: {
+  ids?: string;
+  "auto-retweet"?: unknown;
+  "auto-retweet-remove"?: unknown;
+  account?: string;
+}): Promise<void> {
+  const ids = idsFromFlag("ids", argv.ids);
+  const afterHours = numericFlag("auto-retweet", argv["auto-retweet"]);
+  if (typeof afterHours !== "number") {
+    note("--auto-retweet <hours> is required (1-12).");
+    process.exit(1);
+    return;
+  }
+  const removeAfterHours = numericFlag("auto-retweet-remove", argv["auto-retweet-remove"]);
+
+  const body: Record<string, unknown> = {
+    ids,
+    auto_retweet: {
+      after_hours: afterHours,
+      ...(typeof removeAfterHours === "number" ? { remove_after_hours: removeAfterHours } : {}),
+    },
+  };
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.bulkEnableAutoRetweet(body));
+}
+
+export async function scheduledBulkDelete(argv: {
+  ids?: string;
+  account?: string;
+}): Promise<void> {
+  const ids = idsFromFlag("ids", argv.ids);
+  const body: Record<string, unknown> = { ids };
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.bulkDeleteScheduled(body));
+}
