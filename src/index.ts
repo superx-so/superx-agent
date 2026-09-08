@@ -27,6 +27,13 @@ import {
   listsRemoveMembers,
 } from "./commands/lists";
 import {
+  datasetsList,
+  datasetsGet,
+  datasetsRows,
+  datasetsExport,
+  datasetsAddToList,
+} from "./commands/datasets";
+import {
   signalsAgents,
   signalsLeads,
   signalsCreateAgent,
@@ -454,6 +461,60 @@ yargs(hideBin(process.argv))
           demandOption: true,
         }),
     run(listsRemoveMembers)
+  )
+  .command(
+    "datasets:list",
+    "List the audience collections Ask SuperX built in the app (kept for 30 days)",
+    (y: Argv) => paginationOptions(y),
+    run(datasetsList)
+  )
+  .command(
+    "datasets:get <id>",
+    "Read one dataset: status, counts, coverage (poll this while it collects)",
+    (y: Argv) =>
+      y.positional("id", { describe: "Dataset id (from datasets:list)", type: "string" }),
+    run(datasetsGet)
+  )
+  .command(
+    "datasets:rows <id>",
+    "Read a page of a ready dataset's rows, exactly as collected",
+    (y: Argv) =>
+      paginationOptions(y).positional("id", {
+        describe: "Dataset id (from datasets:list)",
+        type: "string",
+      }),
+    run(datasetsRows)
+  )
+  .command(
+    "datasets:export <id>",
+    "Download a ready dataset as CSV (XLSX stays in the SuperX app)",
+    (y: Argv) =>
+      y
+        .positional("id", { describe: "Dataset id (from datasets:list)", type: "string" })
+        .option("out", {
+          describe: "File to write; defaults to the server's filename in the current directory. Use - to stream the CSV to stdout",
+          type: "string",
+          // Without requiresArg, yargs drops a lone `-` and strict mode
+          // rejects it as an unknown argument, so `--out -` would fail.
+          requiresArg: true,
+        })
+        .example("$0 datasets:export abc123", "Write superx-dataset-<title>-<date>.csv here")
+        .example("$0 datasets:export abc123 --out - | head", "Stream the CSV to stdout"),
+    run(datasetsExport)
+  )
+  .command(
+    "datasets:add-to-list <id>",
+    "Copy the people in a ready dataset into a contact list you created",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Dataset id (from datasets:list)", type: "string" })
+        .option("list-id", {
+          describe: "Contact list id (from lists:list) that receives the people",
+          type: "string",
+          demandOption: true,
+        })
+        .example("$0 datasets:add-to-list abc123 --list-id def456", "Add the dataset's people to a list"),
+    run(datasetsAddToList)
   )
   .command(
     "signals:agents",

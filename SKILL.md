@@ -186,6 +186,24 @@ superx lists:remove-members <list-id> --member-ids m1abc,m2def         # up to 5
 - Re-adding someone already in the list is counted in `duplicates`, never an error. `lists:remove-members` skips ids that are not in the list, so `deleted` can be lower than what you sent.
 - `lists:delete` also stops any signal agent depositing into that list until the agent is repointed in the SuperX app. Confirm with the user first.
 
+### Datasets (Ask SuperX collections)
+
+```bash
+superx datasets:list                                 # collections built in the app, newest first
+superx datasets:get <dataset-id>                     # status, counts, coverage sentence
+superx datasets:rows <dataset-id> --limit 50         # a page of rows, exactly as collected
+superx datasets:export <dataset-id>                  # writes superx-dataset-<title>-<date>.csv here
+superx datasets:export <dataset-id> --out -          # stream the CSV to stdout instead
+superx datasets:add-to-list <dataset-id> --list-id <list-id>   # copy its people into a list
+```
+
+- Datasets are the audience collections Ask SuperX builds in the app: the repliers, quoters or reposters of a post, the members of an X list, the user's own posts or replies, or a research brief. They are created in the SuperX app for now, not from here.
+- They are kept for **30 days**. After that the id 404s.
+- `status` is `collecting`, `ready` or `failed`. Only a `ready` dataset can be paged, exported or added to a list; the others return `409 dataset_not_ready`.
+- Export is **CSV only**. XLSX downloads stay in the SuperX app.
+- `has_people: false` marks an own-content dataset (the user's posts or replies): there is nobody in it to add to a contact list.
+- Dataset ids come from `datasets:list`; the tool that created one also reports its id in the app.
+
 ### Engage (feed posts to reply to)
 
 ```bash
@@ -608,6 +626,8 @@ superx scheduled:list --status scheduled
 39. **`signals:create-agent` is partial success**: entries that fail come back in `warnings` with a `code`, and the agent is still created from the ones that landed. Read `warnings` before telling the user what the agent watches; re-add fixed entries with `signals:add-signal`.
 40. **`signals:feedback` takes the numeric LEAD id from `signals:leads`, not an X user id**, and it trains the scorer. Ask the user for the verdict rather than inferring one. An id from another account returns 404 `lead_not_found`; a repeated `signals:remove-signal` returns 404 `signal_not_found`.
 41. **`articles:cover --style-id` and `--style` are mutually exclusive** (400 if both are sent). Style ids come from `articles:cover-styles`; an unknown one returns 404 `cover_style_not_found`.
+42. **A dataset has to be `ready` before you read its rows, export it or add it to a list.** Poll `datasets:get <id>` until `status` is `ready`; anything else returns 409 `dataset_not_ready`, and a `failed` dataset has to be rebuilt in the SuperX app. Datasets expire after 30 days, after which the id 404s.
+43. **`datasets:add-to-list` dedupes by person and skips rows without an X account id** (research rows sometimes have none), so `added + duplicates` can be lower than the dataset's `row_count`. `skipped_without_id` counts only the rows with no usable X account id or handle; repeat rows for the same person (a replier who replied twice) are deduped silently and are not counted anywhere. Re-running the same command is safe: people already in the list come back in `duplicates`.
 
 ---
 
@@ -642,6 +662,10 @@ superx signals:agents
 superx signals:leads --agent 3 --deposited false
 superx engage:feeds
 superx engage:posts <feed-id> --limit 50
+superx datasets:list
+superx datasets:get <dataset-id>
+superx datasets:rows <dataset-id> --limit 50
+superx datasets:export <dataset-id>                   # CSV file here; --out - streams to stdout
 
 # Contact writes (main or linked account)
 superx contacts:notes:add <x-user-id> --body "..."      # Private note, never posted
@@ -656,6 +680,7 @@ superx lists:rename <list-id> --name "Q4 prospects"
 superx lists:delete <list-id>                            # List + membership; the people stay
 superx lists:add-members <list-id> --x-user-ids 44196397,944883311    # <=500, ids SuperX knows
 superx lists:remove-members <list-id> --member-ids m1abc,m2def        # <=500
+superx datasets:add-to-list <dataset-id> --list-id <list-id>          # people from a ready dataset
 
 # Engage feed writes (main or linked account)
 superx engage:feeds:create --name "AI builders" --keyword "shipping with LLMs"

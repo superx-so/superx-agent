@@ -141,6 +141,53 @@ export class SuperXAPI {
     return { status: response.status, headers: response.headers, json };
   }
 
+  /**
+   * Authenticated request whose 2xx body is NOT JSON (the CSV export). Same
+   * auth, rate-limit capture and error envelope as request(); the difference
+   * is that a successful body comes back as raw text.
+   */
+  private async requestText(
+    endpoint: string,
+    query?: RequestOptions["query"]
+  ): Promise<{ text: string; headers: Headers }> {
+    const url = this.buildUrl(endpoint, query);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      });
+    } catch (err: any) {
+      throw new ApiError(0, "network_error", `Could not reach ${this.apiUrl} (${err?.message || err})`);
+    }
+
+    this.captureRateLimit(response.headers);
+
+    const text = await response.text();
+    if (!response.ok) {
+      const retryHeader = response.headers.get("retry-after");
+      const retryAfter = retryHeader !== null && Number.isFinite(Number(retryHeader)) ? Number(retryHeader) : null;
+      let code = `http_${response.status}`;
+      let message = `Request failed with HTTP ${response.status}`;
+      let json: any = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
+      const errField = json?.error;
+      if (errField && typeof errField === "object" && typeof errField.code === "string") {
+        code = errField.code;
+        if (typeof errField.message === "string") message = errField.message;
+      } else if (typeof errField === "string") {
+        code = errField.split(":")[0].trim() || code;
+        message = errField;
+      }
+      throw new ApiError(response.status, code, message, retryAfter);
+    }
+
+    return { text, headers: response.headers };
+  }
+
   // --- Identity ---
 
   async me(): Promise<any> {
@@ -493,6 +540,37 @@ export class SuperXAPI {
   /** Saved article cover styles (pass an id as style_id to the cover call). */
   async listCoverStyles(query: RequestOptions["query"] = {}): Promise<any> {
     return (await this.request("/cover-styles", { query })).json;
+  }
+
+  // --- Datasets (Ask SuperX collections) ---
+
+  async listDatasets(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/datasets", { query })).json;
+  }
+
+  async getDataset(id: string): Promise<any> {
+    return (await this.request(`/datasets/${encodeURIComponent(id)}`)).json;
+  }
+
+  async getDatasetRows(id: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/datasets/${encodeURIComponent(id)}/rows`, { query })).json;
+  }
+
+  /** CSV export. Raw text, with the server's filename from Content-Disposition. */
+  async exportDatasetCsv(id: string): Promise<{ filename: string; text: string }> {
+    const { text, headers } = await this.requestText(
+      `/datasets/${encodeURIComponent(id)}/export`,
+      { format: "csv" }
+    );
+    const disposition = headers.get("content-disposition") || "";
+    const match = /filename="([^"]+)"/.exec(disposition);
+    return { filename: match ? match[1] : `superx-dataset-${id}.csv`, text };
+  }
+
+  async addDatasetToList(id: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/datasets/${encodeURIComponent(id)}/contacts`, { method: "POST", body })
+    ).json;
   }
 
   // --- Docs (unauthenticated markdown) ---
