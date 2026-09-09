@@ -41,3 +41,31 @@ export async function inspirationSearch(argv: SearchArgs): Promise<void> {
     })
   );
 }
+
+interface MediaArgs {
+  query?: string;
+  platforms?: string;
+  timeFilter?: string;
+  mediaType?: string;
+  contentType?: string;
+  limit?: number;
+}
+
+/**
+ * The cross-platform media index behind the app's Inspiration > Media tab.
+ * No query browses the newest media instead of searching. Costs no
+ * enrichment; the index has its own burst and daily caps.
+ */
+export async function inspirationMedia(argv: MediaArgs): Promise<void> {
+  const api = new SuperXAPI(getConfig());
+  printJson(
+    await api.searchInspirationMedia({
+      q: argv.query,
+      platforms: argv.platforms,
+      time_filter: argv.timeFilter,
+      media_type: argv.mediaType,
+      content_type: argv.contentType,
+      limit: argv.limit,
+    })
+  );
+}

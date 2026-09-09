@@ -5,7 +5,8 @@ import { ApiError, note } from "./api";
 import { login, logout, status } from "./commands/auth";
 import { me, accounts } from "./commands/accounts";
 import { postsList, postsAnalytics, postsDraft, repliesList, repliesReceived } from "./commands/posts";
-import { inspirationSearch } from "./commands/inspiration";
+import { inspirationSearch, inspirationMedia } from "./commands/inspiration";
+import { xPost, xReplies, xUser, xUserPosts } from "./commands/x";
 import {
   contactsList,
   contactsReplies,
@@ -303,6 +304,41 @@ yargs(hideBin(process.argv))
     run(inspirationSearch)
   )
   .command(
+    "inspiration:media [query]",
+    "Search the cross-platform media index behind the app's Inspiration > Media tab",
+    (y: Argv) =>
+      y
+        .positional("query", {
+          describe: "What to search for. Omit to browse the newest media",
+          type: "string",
+        })
+        .option("platforms", {
+          describe: "Comma-separated platforms: x, instagram, youtube, threads, reddit, linkedin",
+          type: "string",
+        })
+        .option("time-filter", {
+          describe: "How recent the media must be",
+          type: "string",
+          choices: ["all", "24h", "7d", "30d"],
+        })
+        .option("media-type", {
+          describe: "Media kind",
+          type: "string",
+          choices: ["all", "video", "image"],
+        })
+        .option("content-type", {
+          describe: "Free-text content-type label as stored in the index; an unknown label returns nothing and still costs a search",
+          type: "string",
+        })
+        .option("limit", {
+          describe: "Items to return (1-120, default 20). No pagination: 120 is one query's maximum",
+          type: "number",
+        })
+        .example('$0 inspiration:media "founder morning routine" --limit 10', "Ten media posts on that theme")
+        .example("$0 inspiration:media --platforms youtube,instagram", "Browse the newest video-platform media"),
+    run(inspirationMedia)
+  )
+  .command(
     "contacts:list",
     "List the people who engage with you most",
     (y: Argv) =>
@@ -515,6 +551,56 @@ yargs(hideBin(process.argv))
         })
         .example("$0 datasets:add-to-list abc123 --list-id def456", "Add the dataset's people to a list"),
     run(datasetsAddToList)
+  )
+  // `<id|url>` is a yargs ALIAS pair, not a literal name: it sets both
+  // argv.id and argv.url to the same value, and prints as "id, url" in
+  // --help. It is used so the help text matches docs.superx.so/cli exactly.
+  .command(
+    "x:post <id|url>",
+    "Look up one public X post live (URL or numeric id)",
+    (y: Argv) =>
+      y
+        .positional("id", { describe: "Post URL or bare numeric post id", type: "string" })
+        .option("quotes", {
+          describe: "Also fetch a page of the posts quoting it (costs a second unit)",
+          type: "boolean",
+        })
+        .example("$0 x:post https://x.com/levelsio/status/1938765432109876543", "Read that post"),
+    run(xPost)
+  )
+  .command(
+    "x:replies <id|url>",
+    "Top replies by likes to a public X post, live (a sample, not every reply)",
+    (y: Argv) =>
+      y
+        .positional("id", { describe: "Post URL or bare numeric post id", type: "string" })
+        .option("limit", { describe: "Replies to return (1-20, default 10)", type: "number" })
+        .example("$0 x:replies 1938765432109876543 --limit 20", "The twenty best-liked replies"),
+    run(xReplies)
+  )
+  .command(
+    "x:user <handle>",
+    "Look up one public X profile live (@ optional)",
+    (y: Argv) =>
+      y
+        .positional("handle", { describe: "The account's @handle", type: "string" })
+        .example("$0 x:user @levelsio", "Read that profile"),
+    run(xUser)
+  )
+  .command(
+    "x:user-posts <handle>",
+    "One live page of an account's latest posts, newest first",
+    (y: Argv) =>
+      y
+        .positional("handle", { describe: "The account's @handle", type: "string" })
+        .option("limit", { describe: "Posts to return (1-20, default 10)", type: "number" })
+        .option("reposts", {
+          describe: "Include reposts (default). Use --no-reposts for own posts only",
+          type: "boolean",
+          default: true,
+        })
+        .example("$0 x:user-posts levelsio --no-reposts", "Their own recent posts, no reposts"),
+    run(xUserPosts)
   )
   .command(
     "signals:agents",

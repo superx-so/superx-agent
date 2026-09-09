@@ -135,6 +135,40 @@ superx inspiration:search "AI tools" --min-likes 500 --min-followers 1000 --max-
 - `outlier_score` on each result = how far the post outperformed the norm for its author's follower tier. Sorting by `outlier` surfaces content that won on substance, not audience size.
 - Results are relevance-ranked, strongest matches first. Weak and promotional matches are filtered out, so a page may return fewer than `--limit` posts.
 
+### Live X lookups
+
+```bash
+superx x:post https://x.com/levelsio/status/1938765432109876543   # one public post, live
+superx x:post 1938765432109876543 --quotes                        # + a page of quote posts
+superx x:replies 1938765432109876543 --limit 20                   # best-liked direct replies
+superx x:user @levelsio                                           # one public profile, live
+superx x:user-posts levelsio --limit 20 --no-reposts              # their latest posts
+```
+
+- These read X **right now**, not SuperX's stored data. Use them for a post or account the user names; use `posts:list` / `contacts:*` for the user's own SuperX data.
+- Cost: the tighter **enrichment** allowance, 1 unit each, **3** for `x:replies` (it walks up to 3 pages), 2 for `x:post --quotes` and 2 for an `x:user-posts` handle SuperX has never seen (`profile_resolved_locally: false` reports that). A multi-unit call is all-or-nothing, never half-charged.
+- On top of that they share an allowance of **300 live lookups per day** with Ask SuperX inside the app. Over it: `429 lookup_quota_exceeded` with `retry_after`, `limit` and `reset_at`, resetting at midnight UTC. That gate fails CLOSED, so the same code appears when SuperX cannot verify the count. Do not retry in a loop; tell the user.
+- Results are cached server-side for about **15 minutes**. A repeat still costs its enrichment units but does not touch the 300/day allowance.
+- `x:replies` is a **sample**: the best-liked replies from up to 3 relevance-ranked pages (about 60 candidates), never every reply and never chronological. For everyone who replied to a post, use the audience collections (`datasets:list`) built in the app. It also does NOT hide the account owner's own replies, unlike the same feature in the app.
+- `x:post` 404s `post_not_found` for a deleted, protected or wrong id. The upstream read reports a missing post and a failed read identically, so retry once before telling the user a post is gone. `x:user` / `x:user-posts` 404 `user_not_found` for a suspended, renamed or misspelled handle.
+- Owner-scoped: none of these take `--account`. Nothing about a public lookup is per-X-account.
+
+### Inspiration media (cross-platform)
+
+```bash
+superx inspiration:media "founder morning routine" --limit 10
+superx inspiration:media --platforms youtube,instagram --media-type video
+superx inspiration:media                                          # browse the newest
+```
+
+- Searches the media index behind the app's Inspiration > Media tab: short-form video and image posts from x, instagram, youtube, threads, reddit and linkedin, with captions, a summary and engagement counts.
+- **No media file URLs.** There is no thumbnail or video link in the response; `source_url` opens the original post on its own platform, so link the user there rather than trying to embed the media.
+- With **no query** it browses the newest media instead of searching. `meta.mode` says which ran, and only `search` results carry a `score`. Unlike the app there is **no personalisation** here.
+- Costs no enrichment. Its own caps are a burst of 20 (refilling one every 3 seconds) and 500 FRESH searches a day; repeats of a recent identical search come from a cache and do not count.
+- **No pagination.** One query returns at most 120 items and `--limit` only trims that, so ask for `--limit 120` and filter locally rather than calling it again for "the next page".
+- `--content-type` is a **free-text label as stored in the index**, with no list to choose from. A label the index does not use returns zero items and still burns one of the 500 daily searches, so leave it off unless the user named one.
+- Use it for visual format and hook research, never to copy.
+
 ### Contacts (who engages with you)
 
 ```bash
@@ -628,6 +662,8 @@ superx scheduled:list --status scheduled
 41. **`articles:cover --style-id` and `--style` are mutually exclusive** (400 if both are sent). Style ids come from `articles:cover-styles`; an unknown one returns 404 `cover_style_not_found`.
 42. **A dataset has to be `ready` before you read its rows, export it or add it to a list.** Poll `datasets:get <id>` until `status` is `ready`; anything else returns 409 `dataset_not_ready`, and a `failed` dataset has to be rebuilt in the SuperX app. Datasets expire after 30 days, after which the id 404s.
 43. **`datasets:add-to-list` dedupes by person and skips rows without an X account id** (research rows sometimes have none), so `added + duplicates` can be lower than the dataset's `row_count`. `skipped_without_id` counts only the rows with no usable X account id or handle; repeat rows for the same person (a replier who replied twice) are deduped silently and are not counted anywhere. Re-running the same command is safe: people already in the list come back in `duplicates`.
+44. **The `x:*` lookups share a 300/day allowance with Ask SuperX in the app**, on top of the enrichment allowance (1 unit each, 3 for `x:replies`, 2 for `x:post --quotes` or a handle SuperX has never seen). Look up what the user actually asked about; do not sweep an account's network. `429 lookup_quota_exceeded` covers three cases and the body says which: your own allowance is used up (it carries `limit`), the SuperX-wide allowance is used up (no `limit`, not your budget), or the counter could not be verified and the call was refused rather than run unmetered (no `limit`, short `retry_after`). Honour `retry_after` rather than assuming midnight, and report it rather than retrying in a loop. Repeats within 15 minutes come from a server-side cache and do not touch the daily allowance.
+45. **`x:replies` is a sample, not every reply**: the best-liked direct replies from up to 3 relevance-ranked pages, not chronological, and it cannot page further. It also does NOT exclude the account owner's own replies, unlike the same view in the app. Use the audience collections (`datasets:list`) when someone needs everyone who replied. And a `post_not_found` on `x:post` can be a transient upstream failure rather than a deleted post, so retry once before saying it is gone.
 
 ---
 
@@ -651,6 +687,7 @@ superx posts:list --since "2026-06-01T00:00:00Z" --until "2026-07-01T00:00:00Z"
 superx posts:analytics --since "2026-06-01T00:00:00Z"
 superx replies:list --limit 20
 superx inspiration:search "build in public" --sort outlier --limit 10
+superx inspiration:media "founder morning routine" --limit 10   # cross-platform media index (--limit up to 120, no paging)
 superx contacts:list --sort engagement --limit 20
 superx contacts:replies <id> --sort most_liked
 superx contacts:get <x-user-id>
@@ -666,6 +703,12 @@ superx datasets:list
 superx datasets:get <dataset-id>
 superx datasets:rows <dataset-id> --limit 50
 superx datasets:export <dataset-id>                   # CSV file here; --out - streams to stdout
+
+# Live X lookups (enrichment units + a shared 300/day allowance)
+superx x:post <id-or-url>                             # one public post, live (--quotes for quotes)
+superx x:replies <id-or-url> --limit 20               # best-liked direct replies (a sample)
+superx x:user <handle>                                # one public profile, live
+superx x:user-posts <handle> --no-reposts             # one live page of their latest posts
 
 # Contact writes (main or linked account)
 superx contacts:notes:add <x-user-id> --body "..."      # Private note, never posted

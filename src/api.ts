@@ -573,6 +573,30 @@ export class SuperXAPI {
     ).json;
   }
 
+  // --- Live X lookups (read X now, not SuperX's stored data) ---
+
+  async lookupXPost(id: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/x/posts/${encodeURIComponent(id)}`, { query })).json;
+  }
+
+  async getXPostReplies(id: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/x/posts/${encodeURIComponent(id)}/replies`, { query })).json;
+  }
+
+  async lookupXUser(handle: string): Promise<any> {
+    return (await this.request(`/x/users/${encodeURIComponent(handle)}`)).json;
+  }
+
+  async getXUserPosts(handle: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/x/users/${encodeURIComponent(handle)}/posts`, { query })).json;
+  }
+
+  // --- Inspiration media (cross-platform media index) ---
+
+  async searchInspirationMedia(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/inspiration/media", { query })).json;
+  }
+
   // --- Docs (unauthenticated markdown) ---
 
   async docs(): Promise<string> {
