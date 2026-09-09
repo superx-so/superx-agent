@@ -33,7 +33,9 @@ import {
   datasetsRows,
   datasetsExport,
   datasetsAddToList,
+  datasetsCollect,
 } from "./commands/datasets";
+import { audienceList } from "./commands/audience";
 import {
   signalsAgents,
   signalsLeads,
@@ -52,6 +54,7 @@ import {
   engageFeedsCreate,
   engageFeedsUpdate,
   engageFeedsDelete,
+  engageMentions,
 } from "./commands/engage";
 import {
   scheduledList,
@@ -552,6 +555,60 @@ yargs(hideBin(process.argv))
         .example("$0 datasets:add-to-list abc123 --list-id def456", "Add the dataset's people to a list"),
     run(datasetsAddToList)
   )
+  .command(
+    "datasets:collect",
+    "Collect an audience (or your own posts) into a new dataset",
+    (y: Argv) =>
+      accountOption(y)
+        .option("source", {
+          describe: "Who to collect",
+          type: "string",
+          choices: [
+            "repliers",
+            "quoters",
+            "reposters",
+            "list_members",
+            "my_replies",
+            "my_posts",
+          ],
+          demandOption: true,
+        })
+        .option("target", {
+          describe: "Post URL or id (repliers, quoters, reposters), or X list URL or id (list_members). Not used for my_posts / my_replies",
+          type: "string",
+        })
+        .option("title", { describe: "Title for the dataset", type: "string" })
+        .option("max-rows", { describe: "Rows to collect at most (1-1000, default 500)", type: "number" })
+        .option("keywords", {
+          describe: "Comma list: keep only rows whose reply, quote or post text contains one of these",
+          type: "string",
+        })
+        .option("bio-keywords", {
+          describe: "Comma list: keep only people whose X bio contains one of these",
+          type: "string",
+        })
+        .option("min-followers", { describe: "Keep only people with at least this many followers", type: "number" })
+        .option("require-website", { describe: "Keep only people with a website in their profile", type: "boolean" })
+        .option("require-can-dm", { describe: "Keep only people whose DMs look open", type: "boolean" })
+        .option("since-days", { describe: "Own posts only: keep posts from the last N days", type: "number" })
+        .option("sort", {
+          describe: "Own posts only: which posts to keep when max-rows cuts the list",
+          type: "string",
+          choices: ["recent", "likes", "impressions"],
+        })
+        .option("wait", {
+          describe: "Poll until a background collection is ready (up to 15 minutes)",
+          type: "boolean",
+        })
+        .example(
+          "$0 datasets:collect --source repliers --target https://x.com/me/status/123 --wait",
+          "Collect everyone who replied and wait for it"
+        )
+        .epilogue(
+          "Costs one of 10 collections a day, shared with the collections Ask SuperX runs in the app. A big collection answers with status collecting and keeps running in the background: poll it with datasets:get, or pass --wait."
+        ),
+    run(datasetsCollect)
+  )
   // `<id|url>` is a yargs ALIAS pair, not a literal name: it sets both
   // argv.id and argv.url to the same value, and prints as "id, url" in
   // --help. It is used so the help text matches docs.superx.so/cli exactly.
@@ -849,6 +906,51 @@ yargs(hideBin(process.argv))
     (y: Argv) =>
       accountOption(y).positional("feedId", { describe: "Feed id (from engage:feeds)", type: "string" }),
     run(engageFeedsDelete)
+  )
+  .command(
+    "engage:mentions",
+    "The posts @-mentioning you right now, each with the post it replies to",
+    (y: Argv) =>
+      accountOption(y)
+        .option("sort", {
+          describe: "latest (default, newest first) or top (most engaged first)",
+          type: "string",
+          choices: ["latest", "top"],
+        })
+        .option("include-replied", {
+          describe: "Keep mentions you already replied to on X, flagged replied",
+          type: "boolean",
+        })
+        .option("cursor", {
+          describe: "next_cursor from the previous call, to read the next page",
+          type: "string",
+        })
+        .example("$0 engage:mentions --sort top", "The most engaged mentions first")
+        .epilogue(
+          "Reads X live and costs 3 of your daily feed fetches per call, so read a page and work from it rather than polling. Page with --cursor."
+        ),
+    run(engageMentions)
+  )
+  .command(
+    "audience:list <kind>",
+    "A page of your followers, following, repliers or reposters",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("kind", {
+          describe: "followers, following, repliers or reposters",
+          type: "string",
+          choices: ["followers", "following", "repliers", "reposters"],
+        })
+        .option("cursor", {
+          describe: "next_cursor from the previous call, to read the next page",
+          type: "string",
+        })
+        .option("limit", { describe: "People per page (1-100, default 50)", type: "number" })
+        .example("$0 audience:list followers --limit 100", "The first 100 followers")
+        .epilogue(
+          "These are the four system lists in the app's Contacts tab; lists:members does not serve them. Paging is by cursor, not page number, and meta.synced_count is the size of the whole list. Repliers and reposters cover a rolling 90 days."
+        ),
+    run(audienceList)
   )
   .command(
     "scheduled:list",

@@ -573,6 +573,26 @@ export class SuperXAPI {
     ).json;
   }
 
+  /** Start a collection. Answers a ready dataset, or a collecting one (202). */
+  async createDataset(body: unknown): Promise<any> {
+    return (await this.request("/datasets", { method: "POST", body })).json;
+  }
+
+  // --- Audience (the four system people-lists) ---
+
+  /** kind: followers | following | repliers | reposters. Cursor paging. */
+  async getAudience(
+    kind: string,
+    query: RequestOptions["query"] = {}
+  ): Promise<any> {
+    return (await this.request(`/audience/${encodeURIComponent(kind)}`, { query })).json;
+  }
+
+  /** Posts @-mentioning the account, read live. Costs 3 feed fetches. */
+  async getMentions(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/engage/mentions", { query })).json;
+  }
+
   // --- Live X lookups (read X now, not SuperX's stored data) ---
 
   async lookupXPost(id: string, query: RequestOptions["query"] = {}): Promise<any> {

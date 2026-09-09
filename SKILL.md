@@ -204,7 +204,7 @@ superx lists:remove-member <list-id> <member-id>     # member-id from lists:memb
 ```
 
 - Lists are the saved people-collections from the SuperX app. Use them to track prospects, customers, or people worth engaging.
-- System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` with `is_system: true` but are read-only and their members are NOT available through the API.
+- System lists (Followers, Following, Repliers, Reposters) appear in `lists:list` with `is_system: true` and a real `member_count`, but they are read-only and `lists:members` will not serve them: read their people with `audience:list <kind>` instead.
 - Adding someone already in a list is harmless: the existing member returns with `"duplicate": true` and nothing changes.
 - Member writes work on your main or linked accounts (`--account`) and need a key with the write scope; shared accounts are read-only.
 
@@ -220,6 +220,41 @@ superx lists:remove-members <list-id> --member-ids m1abc,m2def         # up to 5
 - Re-adding someone already in the list is counted in `duplicates`, never an error. `lists:remove-members` skips ids that are not in the list, so `deleted` can be lower than what you sent.
 - `lists:delete` also stops any signal agent depositing into that list until the agent is repointed in the SuperX app. Confirm with the user first.
 
+### Audience (followers, following, repliers, reposters)
+
+```bash
+superx audience:list followers --limit 100           # newest followers first
+superx audience:list following
+superx audience:list repliers                        # people who replied in the last 90 days
+superx audience:list reposters
+superx audience:list followers --cursor "<next_cursor>"   # the next page
+```
+
+- These are the four SYSTEM people-lists in the app's Contacts tab. `lists:members` does not serve them; this is where they are read.
+- Paging is by **cursor**, not page number. Take `pagination.next_cursor` from one call and pass it as `--cursor` to the next; `has_more: false` means you are at the end. Do not try `--page`.
+- There is no `total`. `meta.synced_count` is the size of the whole list, so quote that rather than counting rows. It may exceed the rows a full walk returns, because edges that were later removed are still counted.
+- `meta.status` is the sync state (`missing`, `pending`, `running`, `complete`, `paused`): anything but `complete` means SuperX is still filling the list in, so say so rather than presenting a partial list as the whole audience.
+- On `followers` / `following`, `meta.is_capped: true` means the account is deeper than the plan's `backfill_cap` and the list is the most recent slice, not everyone.
+- `repliers` and `reposters` are a rolling 90-day window (`meta.window_days`): someone whose last reply ages past 90 days drops out and comes back on their next one.
+- `engaged_count` is replies + reposts in the last 90 days on the follow lists, and this list's own action count on the other two. `icp_score` and `icp_rationale` are always null here (scoring belongs to signal-agent leads).
+- Costs no enrichment units, and reads like any other GET.
+
+### Mentions (who is talking to you right now)
+
+```bash
+superx engage:mentions                               # newest mentions, with the post each replies to
+superx engage:mentions --sort top                    # most engaged first
+superx engage:mentions --include-replied true        # keep ones you already answered, flagged replied
+superx engage:mentions --cursor "<next_cursor>"      # the next page
+```
+
+- Reads X **live**, so it is the up-to-the-minute view of what people are saying to the user, unlike `replies:received` which reads what SuperX has stored.
+- One call costs **3 of the daily feed fetches** (the same allowance `engage:posts` draws on): read a page and work from it rather than polling.
+- `mention_type` is `reply` for a direct reply to one of the user's posts and `mention` for anything else (standalone @-mention, chain, or being tagged in someone else's reply). `parent_post` carries the post being replied to, with one further level of ancestry.
+- By default, mentions the user already replied to on X are left out. `--include-replied true` keeps them with `replied: true`.
+- The app's Mentions tab also hides posts the user skipped or blocked there. That is an app preference and is NOT applied here, so the API list can be longer than what they see in the app.
+- READ-ONLY, like Engage: there is no reply command. Draft suggestions for the user and let them send.
+
 ### Datasets (Ask SuperX collections)
 
 ```bash
@@ -229,9 +264,18 @@ superx datasets:rows <dataset-id> --limit 50         # a page of rows, exactly a
 superx datasets:export <dataset-id>                  # writes superx-dataset-<title>-<date>.csv here
 superx datasets:export <dataset-id> --out -          # stream the CSV to stdout instead
 superx datasets:add-to-list <dataset-id> --list-id <list-id>   # copy its people into a list
+
+# Build a new one (write scope)
+superx datasets:collect --source repliers --target https://x.com/user/status/123 --wait
+superx datasets:collect --source list_members --target https://x.com/i/lists/1234567890
+superx datasets:collect --source my_posts --since-days 90 --sort likes
+superx datasets:collect --source reposters --target 1234567890 --min-followers 500 --require-can-dm
 ```
 
-- Datasets are the audience collections Ask SuperX builds in the app: the repliers, quoters or reposters of a post, the members of an X list, the user's own posts or replies, or a research brief. They are created in the SuperX app for now, not from here.
+- Datasets are audience collections: the repliers, quoters or reposters of a post, the members of an X list, or the user's own posts or replies. `datasets:collect` builds one from here; the ones Ask SuperX builds in the app show up in the same list (research briefs are app-only).
+- `datasets:collect` may not be done when it returns. A big collection, or one whose size cannot be established up front, answers `status: "collecting"` with zero rows and keeps running in the background: pass `--wait` to poll until it is ready, or poll `datasets:get` yourself. NEVER quote a row count from a `collecting` result.
+- Each collection costs one of **10 a day** for the account, shared with the collections Ask SuperX runs in the app (429 `collection_quota_exceeded`), plus enrichment for the pages it walks. `--source my_posts` / `my_replies` read the local post library: no enrichment, always synchronous, and the profile filters do not apply to them (the `note` says so).
+- Only ONE background collection runs per account at a time: a second one returns 409 `collection_in_progress`. If nothing matched the filters no dataset is created: the answer is `data: null` with a `note`.
 - They are kept for **30 days**. After that the id 404s.
 - `status` is `collecting`, `ready` or `failed`. Only a `ready` dataset can be paged, exported or added to a list; the others return `409 dataset_not_ready`.
 - Export is **CSV only**. XLSX downloads stay in the SuperX app.
@@ -665,6 +709,10 @@ superx scheduled:list --status scheduled
 44. **The `x:*` lookups share a 300/day allowance with Ask SuperX in the app**, on top of the enrichment allowance (1 unit each, 3 for `x:replies`, 2 for `x:post --quotes` or a handle SuperX has never seen). Look up what the user actually asked about; do not sweep an account's network. `429 lookup_quota_exceeded` covers three cases and the body says which: your own allowance is used up (it carries `limit`), the SuperX-wide allowance is used up (no `limit`, not your budget), or the counter could not be verified and the call was refused rather than run unmetered (no `limit`, short `retry_after`). Honour `retry_after` rather than assuming midnight, and report it rather than retrying in a loop. Repeats within 15 minutes come from a server-side cache and do not touch the daily allowance.
 45. **`x:replies` is a sample, not every reply**: the best-liked direct replies from up to 3 relevance-ranked pages, not chronological, and it cannot page further. It also does NOT exclude the account owner's own replies, unlike the same view in the app. Use the audience collections (`datasets:list`) when someone needs everyone who replied. And a `post_not_found` on `x:post` can be a transient upstream failure rather than a deleted post, so retry once before saying it is gone.
 
+46. **`audience:list` pages by cursor, not by page number.** Pass `pagination.next_cursor` back as `--cursor`; there is no `--page` and no `total`. Quote `meta.synced_count` for the size of the list, but note it may exceed the rows a full walk returns (edges that were later removed are still counted). Check `meta.status`: anything but `complete` means SuperX is still syncing, and `meta.is_capped: true` on the follow lists means it is the most recent slice, not everyone. `meta.account_id` is the account id you pass to `--account`; the X user id is `meta.x_account_id`. Repliers and reposters only cover a rolling 90 days.
+47. **`engage:mentions` costs 3 feed fetches per call and shows more than the app.** It draws on the same daily feed allowance as `engage:posts`, so read one page and work from it rather than polling. It does NOT apply the skipped/blocked filtering the app's Mentions tab does (that lives with the app), and by default it leaves out mentions already replied to on X unless you pass `--include-replied true`.
+48. **`datasets:collect` can return before the collection is done.** `status: "collecting"` means zero rows so far and work still running: use `--wait`, or poll `datasets:get` until `ready`, and never state a row count from the create result. A collection whose size cannot be established up front also runs in the background. It costs one of 10 collections a day shared with Ask SuperX in the app, only one runs per account at a time (409 `collection_in_progress`), and an empty result creates no dataset at all (`data: null` plus a `note`) and gives the daily slot back.
+
 ---
 
 ## Quick Reference
@@ -695,6 +743,8 @@ superx contacts:notes <x-user-id>
 superx replies:received --sort most_liked --limit 20
 superx lists:list
 superx lists:members <list-id> --q "founder"
+superx audience:list followers --limit 100         # system lists: cursor paging, no --page
+superx engage:mentions --sort top                  # live @-mentions (costs 3 feed fetches)
 superx signals:agents
 superx signals:leads --agent 3 --deposited false
 superx engage:feeds
@@ -703,6 +753,7 @@ superx datasets:list
 superx datasets:get <dataset-id>
 superx datasets:rows <dataset-id> --limit 50
 superx datasets:export <dataset-id>                   # CSV file here; --out - streams to stdout
+superx datasets:collect --source repliers --target <post-url> --wait   # build one, poll until ready
 
 # Live X lookups (enrichment units + a shared 300/day allowance)
 superx x:post <id-or-url>                             # one public post, live (--quotes for quotes)

@@ -109,3 +109,27 @@ export async function engageFeedsDelete(argv: {
   await api.deleteEngageFeed(argv.feedId, { account_id: argv.account });
   printJson({ id: argv.feedId, deleted: true });
 }
+
+/**
+ * Mentions: the posts @-mentioning the account, read live from X. One call
+ * costs 3 units of the plan's daily feed-fetch allowance, so read a page and
+ * work from it rather than polling. Cursor paging.
+ */
+export async function engageMentions(argv: {
+  account?: string;
+  sort?: string;
+  includeReplied?: boolean;
+  cursor?: string;
+}): Promise<void> {
+  const api = new SuperXAPI(getConfig());
+  printJson(
+    await api.getMentions({
+      account_id: argv.account,
+      sort: argv.sort,
+      // yargs boolean: pass through only when the flag was given.
+      include_replied:
+        argv.includeReplied === undefined ? undefined : String(argv.includeReplied),
+      cursor: argv.cursor,
+    })
+  );
+}
