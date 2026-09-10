@@ -86,5 +86,5 @@ Verify state with `superx scheduled:list --status draft,scheduled` after every p
 
 - Drafts first when confidence is low; a human (or a later `scheduled:update --status scheduled`) can promote a draft after review. Use `--scratchpad` to leave the reasoning behind a draft where the human will see it.
 - Never fabricate metrics, quotes, or claims in content. Use real data from the CLI or say nothing.
-- Respect the write constraints: main account only, images only via `media:upload` (no video), UTC timestamps with explicit offset (see SKILL.md Rule 3).
+- Respect the write constraints: writes work on your main account or any linked account (pass the same `--account` you used to read it), accounts other people shared with you are read-only, images only via `media:upload` (no video), UTC timestamps with explicit offset (see SKILL.md Rule 3).
 - Quality over volume, always. One post a stranger would reply to beats five posts nobody finishes reading.

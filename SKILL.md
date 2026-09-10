@@ -30,7 +30,7 @@ official website: https://superx.so
 
 **Rule 1: Run `superx status` before anything else.** Every other command fails without valid credentials. If the `superx` binary is missing, install it with `npm install -g superx-cli`. If not authenticated, either run `superx login` (interactive) or set `export SUPERX_API_KEY=sxk_...` (CI and non-interactive sessions). Keys are created at https://app.superx.so/account?tab=api.
 
-**Rule 2: Read PLAYBOOK.md before creating any content.** This repo ships a growth strategy guide (`PLAYBOOK.md`, also inside the installed npm package). It tells you WHAT to post, WHEN, and WHY: the action hierarchy, out-of-network discovery, the engagement loop, and the failure modes that kill reach. The CLI gives you data and actions; the playbook gives you judgment. Do not schedule content without it.
+**Rule 2: Read PLAYBOOK.md before creating any content.** This repo ships a growth strategy guide (`PLAYBOOK.md`, also inside the installed npm package). It tells you WHAT to post, WHEN, and WHY: the action hierarchy, out-of-network discovery, the engagement loop, and the failure modes that kill reach. The CLI gives you data and actions; the playbook gives you judgment. Do not schedule content without it. For a goal-shaped task ("give me my weekly recap", "DM the people who replied to this post"), read `PLAYBOOKS.md` too: it holds the 28 named recipes with their exact command chains, MCP tool names and stopping points.
 
 **Rule 3: Know the write constraints.** `scheduled:create` without `--at` creates a DRAFT (nothing publishes). With `--at` it schedules for that time. `scheduled:update` changes only the flags you pass, and a new `--at` alone never schedules a draft; add `--status scheduled` to promote. Writes work on your main account or any linked account (pass the same `--account` you used to read it); accounts shared with you by other people are read-only, and tags are workspace-wide. Images attach via `media:upload` then `--media` (JPG/PNG/WEBP up to 5MB, GIF up to 15MB; max 4 images or 1 GIF per post); video is not supported. Timestamps MUST be UTC ISO-8601 with an explicit `Z` or offset; naive timestamps are rejected with 400. `posts:publish` and `articles:publish` post to X IMMEDIATELY and irreversibly; treat them like hitting Publish in public and get human confirmation of the exact text unless the user already gave it. `posts:publish` also requires `--idempotency-key`, which you reuse verbatim on any retry. `posts:draft` writes post text in the user's voice and saves NOTHING: show the drafts, let the user pick and edit one, then pass the final text to `scheduled:create` yourself; it costs AI credits per draft, so ask for the count the user actually wants.
 
@@ -756,6 +756,54 @@ superx scheduled:list --status scheduled
 
 ---
 
+## Playbooks
+
+Full recipes with flags and MCP tool chains: [PLAYBOOKS.md](./PLAYBOOKS.md). Pick by goal, then open that entry.
+
+### Recaps and analytics
+- **Weekly Growth Recap**: the week in review, one focus for next week. `posts:analytics` -> `posts:list` -> `signals:leads` -> `replies:received`
+- **Growth Plan Builder**: multi-week plan tied to real numbers. `posts:analytics` -> `posts:list` -> `replies:list` -> `queue:get`
+- **Post Post-Mortem**: why one post over- or underperformed. `posts:list` -> `posts:analytics` -> `x:user-posts`
+- **Top Performers Breakdown**: the shape the best posts share. `posts:list` -> `posts:analytics`
+- **My Replies Report**: which replies earned attention. `replies:list`
+
+### Content
+- **Daily Post Ideas**: two or three drafts for today. `scheduled:list` -> `posts:list` -> `posts:draft` -> `scheduled:create`
+- **Week of Posts**: a week of drafts on the real slots. `posts:list` -> `queue:get` -> `posts:draft` -> `scheduled:create`
+- **Thread Builder**: notes turned into a thread draft. `posts:draft` -> `scheduled:create`
+- **Repurpose a Winner**: the best post, reworked. `posts:list` -> `posts:remix` -> `scheduled:create`
+- **Viral Format Remix**: proven shapes in this account's voice. `inspiration:search` -> `posts:draft` -> `scheduled:create`
+- **Trending Now Scan**: what is working in the niche now. `inspiration:search`
+
+### Queue
+- **Cadence & Queue Audit**: gaps, pile-ups, a cadence verdict. `queue:get` -> `scheduled:list` -> `posts:list` -> `scheduled:update`
+- **Queue Reshuffle**: move and rewrite queued posts. `scheduled:list` -> `scheduled:bulk-retime` -> `scheduled:update`
+
+### Replies (stop at a draft, by design)
+- **Reply Sprint**: five audience replies, each with a draft. `replies:received` -> `engage:reply-draft`
+- **Reply to Any Post**: context plus one strong reply draft. `x:post` -> `x:replies` -> `engage:reply-draft`
+
+### Leads
+- **Who Is This Person?**: a fast read plus your history. `x:user` -> `x:user-posts` -> `contacts:get` -> `contacts:replies`
+- **Your Warmest Leads**: the people engaging most, ranked. `contacts:list` -> `contacts:replies`
+- **Instant Lead Hunt**: live search for matching people now. `signals:suggest-keywords` -> `signals:search`
+- **Standing Lead Agent**: an agent that keeps finding leads. `signals:expand-icp` -> `signals:create-agent` -> `signals:leads`
+- **Lead Review**: found leads, prioritized and checked. `signals:agents` -> `signals:leads` -> `x:user-posts` -> `signals:feedback`
+
+### Audiences, research and DMs
+- **Profile Research Briefs**: structured briefs plus a CSV. `datasets:research` -> `datasets:rows` -> `datasets:export`
+- **DM-Ready Audience Builder**: a clean DM-able audience. `datasets:collect` -> `datasets:get` -> `datasets:add-to-list`
+- **Sentiment Slice**: keep only the people who said it. `datasets:list` -> `datasets:refine` -> `datasets:rows`
+- **Audience Export**: everyone who engaged a post, as CSV. `datasets:collect` -> `datasets:export`
+- **My Content Export**: your own posts or replies, as CSV. `datasets:collect` -> `datasets:export`
+- **Warm Outreach Pipeline**: briefs, a message each, queued. `datasets:research` -> `datasets:outreach-drafts` -> `dm:campaign`
+- **Reply-to-DM Campaign**: DM the people who replied. `datasets:collect` -> `datasets:refine` -> `dm:campaign`
+
+### Settings
+- **Teach SuperX Your Rules**: standing rules for AI drafts. `context:get` -> `context:set`
+
+---
+
 ## Common Gotchas
 
 1. **Naive timestamps are rejected (400)**. Always include `Z` or an offset: `2026-08-01T15:00:00Z`, not `2026-08-01T15:00:00`.
@@ -981,4 +1029,4 @@ superx --help                                     # All commands
 superx scheduled:create --help                    # Command help
 ```
 
-Strategy lives in [PLAYBOOK.md](./PLAYBOOK.md). Read it before creating content (Rule 2).
+Strategy lives in [PLAYBOOK.md](./PLAYBOOK.md). Read it before creating content (Rule 2). Goal-shaped recipes live in [PLAYBOOKS.md](./PLAYBOOKS.md): open the entry that matches what the user asked for.

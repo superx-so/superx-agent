@@ -11,7 +11,7 @@ npx skills add superx-so/superx-agent
 Two things ship in this repo:
 
 - `superx-cli`, an npm package installing the `superx` binary (a thin client for `api.superx.so/v1`)
-- An agent skill (`SKILL.md`) plus a growth strategy guide (`PLAYBOOK.md`) so agents do not just schedule posts, they follow a strategy that works
+- An agent skill (`SKILL.md`) plus a growth strategy guide (`PLAYBOOK.md`) and 28 goal-shaped recipes (`PLAYBOOKS.md`) so agents do not just schedule posts, they follow a strategy that works
 
 ---
 
@@ -344,6 +344,7 @@ superx docs   # Prints the API quickstart as markdown; works without auth
 
 - **Skill included**: `npx skills add superx-so/superx-agent` installs [SKILL.md](./SKILL.md), a complete agent reference with hard rules, workflows, and gotchas.
 - **Strategy included**: [PLAYBOOK.md](./PLAYBOOK.md) distills the SuperX growth methodology (action hierarchy, out-of-network discovery, the 3-3-3 engagement loop, weekly operating system) into directives an agent can execute with this CLI. The skill instructs agents to read it before creating content.
+- **Playbooks included**: [PLAYBOOKS.md](./PLAYBOOKS.md) holds 28 goal-shaped recipes, one per SuperX skill, each with its CLI chain, the matching MCP tool chain, and the point where the agent hands the result back to a person.
 - **Clean JSON stdout**: no decoration to strip; every data command is `jq`-safe.
 - **Idempotent writes**: agents can retry `scheduled:create` safely with `--idempotency-key`.
 - **Self-describing**: `superx docs` fetches the current API quickstart at runtime.
