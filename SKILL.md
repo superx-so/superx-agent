@@ -270,9 +270,12 @@ superx datasets:collect --source repliers --target https://x.com/user/status/123
 superx datasets:collect --source list_members --target https://x.com/i/lists/1234567890
 superx datasets:collect --source my_posts --since-days 90 --sort likes
 superx datasets:collect --source reposters --target 1234567890 --min-followers 500 --require-can-dm
+
+# Narrow a dataset by what each person wrote (creates a NEW dataset)
+superx datasets:refine <dataset-id> --criterion "supportive or neutral, not hostile" --sort followers --wait
 ```
 
-- Datasets are audience collections: the repliers, quoters or reposters of a post, the members of an X list, or the user's own posts or replies. `datasets:collect` builds one from here; the ones Ask SuperX builds in the app show up in the same list (research briefs are app-only).
+- Datasets are audience collections: the repliers, quoters or reposters of a post, the members of an X list, the user's own posts or replies, or a set of research briefs. `datasets:collect` builds one from here, `datasets:research` builds the briefs kind (see Lead search and outreach below), and the ones Ask SuperX builds in the app show up in the same list.
 - `datasets:collect` may not be done when it returns. A big collection, or one whose size cannot be established up front, answers `status: "collecting"` with zero rows and keeps running in the background: pass `--wait` to poll until it is ready, or poll `datasets:get` yourself. NEVER quote a row count from a `collecting` result.
 - Each collection costs one of **10 a day** for the account, shared with the collections Ask SuperX runs in the app (429 `collection_quota_exceeded`), plus enrichment for the pages it walks. `--source my_posts` / `my_replies` read the local post library: no enrichment, always synchronous, and the profile filters do not apply to them (the `note` says so).
 - Only ONE background collection runs per account at a time: a second one returns 409 `collection_in_progress`. If nothing matched the filters no dataset is created: the answer is `data: null` with a `note`.
@@ -281,6 +284,7 @@ superx datasets:collect --source reposters --target 1234567890 --min-followers 5
 - Export is **CSV only**. XLSX downloads stay in the SuperX app.
 - `has_people: false` marks an own-content dataset (the user's posts or replies): there is nobody in it to add to a contact list.
 - Dataset ids come from `datasets:list`; the tool that created one also reports its id in the app.
+- `datasets:refine` filters a dataset by WHAT EACH PERSON WROTE and writes the kept rows to a NEW dataset; the source is untouched. It only works on datasets whose rows carry text (repliers, quoters) - anything else is a 400. Rows the classifier cannot judge are KEPT and counted as `unclear`, so report those honestly rather than claiming clean curation. It creates a dataset, so it counts against the SAME 10 collections a day, and it costs AI credits. Over 100 rows with text it answers `202 collecting`: pass `--wait` or poll `datasets:get`.
 
 ### Engage (feed posts to reply to)
 
@@ -359,6 +363,34 @@ superx signals:feedback 4821 --clear
 - Each lead carries the person's profile, `icp_score` and `icp_rationale` (why they matched), `deposited`/`deposited_at` (whether it has been saved to the agent's contact list yet), `discovered_at`, and `provenance` (how it was found: the action, the watched handle, the triggering post text).
 - `signals:leads` flags: `--agent <id>` (from `signals:agents`; unknown id returns 404 `agent_not_found`), `--deposited true|false`, `--since/--until` (UTC ISO-8601, on discovery time), `--limit` (max 100, default 50), `--page`.
 - An agent's `destination_list_id` joins to `lists:list` for the target list's name; deposited leads appear there as members.
+
+### Lead search and outreach (live search, briefs, drafts)
+
+```bash
+# Find people on X right now (saves NOTHING: no agent, no stored leads)
+superx signals:search \
+  --keywords "losing customers to churn, cancellations killing my MRR" \
+  --icp "B2B SaaS founders worried about retention" \
+  --precision discovery --max 10
+
+# Turn people into outreach briefs saved as a dataset (exactly one source)
+superx datasets:research --handles levelsio,naval --focus "audience-growth tooling" --wait
+superx datasets:research --list <contact-list-id> --max 20 --wait
+superx datasets:research --agent 3 --max 10 --wait
+superx datasets:research --dataset <dataset-id> --max 25 --wait
+
+# Draft one message per person onto that dataset (TEXT ONLY - nothing is sent)
+superx datasets:outreach-drafts <dataset-id> \
+  --format "hey [first]! been following what you're building. <personalization>. would love to trade notes"
+superx datasets:rows <dataset-id> --limit 50        # read every drafted message
+```
+
+- **Nothing in this chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto the dataset's `message` column and stops there. A person reviews and sends them from the SuperX app. Never tell the user their messages have gone out, and never imply the CLI can send them.
+- `signals:search` needs a key with the **write** scope (every non-GET API route does), even though it CREATES NOTHING. The leads exist only in that response, so save what you need. For an audience that keeps filling up on its own, use `signals:create-agent` instead. It takes up to a minute, and each lead comes from ONE matched post: `posts_count` is lifetime volume, not proof of current activity.
+- `datasets:research` needs exactly one of `--handles` (max 25), `--list`, `--agent` or `--dataset`, and `--max` is 1-25 (default 10). Every hook in a brief QUOTES one of the person's real posts; proposed quotes that failed the verbatim check are dropped server-side, so a brief with no hooks is honest, not broken. More than 5 profiles run in the background (`202 collecting`) - pass `--wait` or poll `datasets:get`.
+- `datasets:outreach-drafts` needs a `--format` from the USER: their template or an example message. Never invent one. `[name]`, `[first]` and `[handle]` are kept intact for per-recipient fill-in at send time. A brief with no usable hook gets an honest generic message counted in `generic`, and a draft that names a DIFFERENT recipient is discarded and counted in `contaminated` (run it again to retry those rows). Re-running overwrites every draft.
+- Costs: `signals:search` is measured, at least 1 credit for a search that reaches X; `datasets:research` is a flat **1 credit per profile actually researched** (the rest are returned); `datasets:outreach-drafts` is measured and usually 1-3 credits. Research settles when the run finishes, so after a `--wait` read `superx status` for the pool rather than the response.
+- The two that read X live also carry per-plan day caps (`429 ai_action_limited`) and draw on a platform-wide fair-use ceiling shared by every account. On a 429 read `error.scope`: `"account"` means the user's own daily cap, `"platform"` means the shared ceiling and their own allowance is untouched - wait for `reset_at` and retry rather than telling them they are out.
 
 ### Scheduling
 
@@ -712,6 +744,9 @@ superx scheduled:list --status scheduled
 46. **`audience:list` pages by cursor, not by page number.** Pass `pagination.next_cursor` back as `--cursor`; there is no `--page` and no `total`. Quote `meta.synced_count` for the size of the list, but note it may exceed the rows a full walk returns (edges that were later removed are still counted). Check `meta.status`: anything but `complete` means SuperX is still syncing, and `meta.is_capped: true` on the follow lists means it is the most recent slice, not everyone. `meta.account_id` is the account id you pass to `--account`; the X user id is `meta.x_account_id`. Repliers and reposters only cover a rolling 90 days.
 47. **`engage:mentions` costs 3 feed fetches per call and shows more than the app.** It draws on the same daily feed allowance as `engage:posts`, so read one page and work from it rather than polling. It does NOT apply the skipped/blocked filtering the app's Mentions tab does (that lives with the app), and by default it leaves out mentions already replied to on X unless you pass `--include-replied true`.
 48. **`datasets:collect` can return before the collection is done.** `status: "collecting"` means zero rows so far and work still running: use `--wait`, or poll `datasets:get` until `ready`, and never state a row count from the create result. A collection whose size cannot be established up front also runs in the background. It costs one of 10 collections a day shared with Ask SuperX in the app, only one runs per account at a time (409 `collection_in_progress`), and an empty result creates no dataset at all (`data: null` plus a `note`) and gives the daily slot back.
+49. **Nothing in the outreach chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto a research dataset and stops there; a person reviews and sends them from the SuperX app. Never say messages were sent and never offer to send them. Ask the user for the `--format`; never invent one. Re-running overwrites every draft, `generic` counts messages written with no personal claims (that brief had no usable hook), and `contaminated` counts drafts discarded for naming a different recipient - run it again to retry those rows.
+50. **`signals:search` saves nothing and `datasets:research` charges per profile.** A search creates no agent and no stored leads, so keep what the user needs from that response; use `signals:create-agent` when they want leads to keep arriving. Research is a flat 1 credit per profile ACTUALLY researched (handles that cannot be resolved, and people with no recent posts, come back in `skipped` and are refunded), and over 5 profiles it runs in the background: never state a brief count from a `collecting` result. `datasets:refine` also creates a dataset, so it spends one of the same 10 collections a day.
+51. **`ai_action_limited` has two scopes.** Read `error.scope` before telling the user anything: `"account"` is their plan's own daily cap for that action, `"platform"` is a fair-use ceiling on live-data actions shared by every SuperX account. On `"platform"` their own allowance is untouched, so wait for `reset_at` and retry rather than reporting them as out of quota.
 
 ---
 
@@ -745,6 +780,7 @@ superx lists:list
 superx lists:members <list-id> --q "founder"
 superx audience:list followers --limit 100         # system lists: cursor paging, no --page
 superx engage:mentions --sort top                  # live @-mentions (costs 3 feed fetches)
+superx signals:search --keywords "..." --icp "..."  # live lead search, saves nothing
 superx signals:agents
 superx signals:leads --agent 3 --deposited false
 superx engage:feeds
@@ -754,6 +790,9 @@ superx datasets:get <dataset-id>
 superx datasets:rows <dataset-id> --limit 50
 superx datasets:export <dataset-id>                   # CSV file here; --out - streams to stdout
 superx datasets:collect --source repliers --target <post-url> --wait   # build one, poll until ready
+superx datasets:refine <dataset-id> --criterion "..." --wait          # filter by what each person wrote
+superx datasets:research --handles a,b,c --wait                       # briefs, 1 credit per profile
+superx datasets:outreach-drafts <dataset-id> --format "..."           # message TEXT only, nothing sent
 
 # Live X lookups (enrichment units + a shared 300/day allowance)
 superx x:post <id-or-url>                             # one public post, live (--quotes for quotes)

@@ -34,11 +34,15 @@ import {
   datasetsExport,
   datasetsAddToList,
   datasetsCollect,
+  datasetsResearch,
+  datasetsOutreachDrafts,
+  datasetsRefine,
 } from "./commands/datasets";
 import { audienceList } from "./commands/audience";
 import {
   signalsAgents,
   signalsLeads,
+  signalsSearch,
   signalsCreateAgent,
   signalsPauseAgent,
   signalsResumeAgent,
@@ -609,6 +613,96 @@ yargs(hideBin(process.argv))
         ),
     run(datasetsCollect)
   )
+  .command(
+    "datasets:research",
+    "Research people into outreach briefs saved as a dataset",
+    (y: Argv) =>
+      accountOption(y)
+        .option("handles", {
+          describe: "Comma list of X handles to research (with or without the @). Max 25",
+          type: "string",
+        })
+        .option("list", { describe: "Research the members of this contact list id", type: "string" })
+        .option("agent", { describe: "Research this signal agent's leads (numeric id)", type: "number" })
+        .option("dataset", { describe: "Research the people in this dataset id", type: "string" })
+        .option("max", { describe: "Profiles to research, first N from the source (1-25, default 10)", type: "number" })
+        .option("focus", {
+          describe: "Optional steer, e.g. 'founders who might need audience-growth tooling'",
+          type: "string",
+        })
+        .option("title", { describe: "Title for the briefs dataset", type: "string" })
+        .option("wait", {
+          describe: "Poll until a background research run is ready (up to 15 minutes)",
+          type: "boolean",
+        })
+        .example(
+          "$0 datasets:research --handles levelsio,naval --focus 'audience-growth tooling'",
+          "Research two handles into briefs"
+        )
+        .epilogue(
+          "Give exactly one source: --handles, --list, --agent or --dataset. Costs 1 AI credit per profile actually researched (the rest are returned) plus one of the plan's daily research runs. More than 5 profiles run in the background: the result says status collecting, so poll with datasets:get or pass --wait. Live-data actions also draw on a platform-wide fair-use ceiling shared by every account."
+        ),
+    run(datasetsResearch)
+  )
+  .command(
+    "datasets:outreach-drafts <id>",
+    "Draft one personalized message per person in a research dataset (text only, nothing is sent)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Research dataset id (from datasets:research)", type: "string" })
+        .option("format", {
+          describe: "The template or example message every draft should follow (10-1000 chars)",
+          type: "string",
+          demandOption: true,
+        })
+        .option("instructions", {
+          describe: "Optional extra steer: tone, what to emphasize, what to avoid",
+          type: "string",
+        })
+        .example(
+          "$0 datasets:outreach-drafts abc123 --format \"hey [first]! <personalization>. would love to trade notes\"",
+          "Draft messages onto the dataset"
+        )
+        .epilogue(
+          "The drafts are TEXT: they are stored on the dataset (read them with datasets:rows) and a person sends them from the SuperX app. Nothing here sends a DM. Re-running overwrites every draft. [name], [first] and [handle] tokens are kept for per-recipient fill-in at send time."
+        ),
+    run(datasetsOutreachDrafts)
+  )
+  .command(
+    "datasets:refine <id>",
+    "Filter a dataset by what each person wrote, into a new dataset",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Source dataset id (from datasets:list)", type: "string" })
+        .option("criterion", {
+          describe: "What the rows to match look like, judged on each row's own text",
+          type: "string",
+          demandOption: true,
+        })
+        .option("keep", {
+          describe: "Keep the rows that MATCH (default). --no-keep keeps the rows that do not",
+          type: "boolean",
+        })
+        .option("sort", {
+          describe: "Sort the kept rows descending before the limit",
+          type: "string",
+          choices: ["followers", "likes", "none"],
+        })
+        .option("limit", { describe: "Keep at most this many rows after filtering and sorting", type: "number" })
+        .option("title", { describe: "Title for the new dataset", type: "string" })
+        .option("wait", {
+          describe: "Poll until a background refinement is ready (up to 15 minutes)",
+          type: "boolean",
+        })
+        .example(
+          "$0 datasets:refine abc123 --criterion 'supportive or neutral, not hostile' --sort followers",
+          "Keep the friendly repliers, best-followed first"
+        )
+        .epilogue(
+          "The source dataset is untouched. Only datasets whose rows carry text (repliers, quoters) can be refined this way. Rows the classifier cannot judge are KEPT and counted as unclear. A refinement creates a dataset, so it counts against the same 10 collections a day, and it costs AI credits."
+        ),
+    run(datasetsRefine)
+  )
   // `<id|url>` is a yargs ALIAS pair, not a literal name: it sets both
   // argv.id and argv.url to the same value, and prints as "id, url" in
   // --help. It is used so the help text matches docs.superx.so/cli exactly.
@@ -664,6 +758,36 @@ yargs(hideBin(process.argv))
     "List your signal agents (automated lead finders) with their watched signals",
     (y: Argv) => accountOption(y),
     run(signalsAgents)
+  )
+  .command(
+    "signals:search",
+    "Search X now for people matching an audience description (saves nothing)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("keywords", {
+          describe: "Plain-language phrases these people would post, comma-separated for alternatives. No search operators",
+          type: "string",
+          demandOption: true,
+        })
+        .option("icp", {
+          describe: "Who counts as a good lead, in 1-2 sentences: role, domain, and the intent that qualifies them",
+          type: "string",
+          demandOption: true,
+        })
+        .option("precision", {
+          describe: "high = only confident matches; discovery (default) = broader adjacent matches",
+          type: "string",
+          choices: ["high", "discovery"],
+        })
+        .option("max", { describe: "Leads to return at most (1-30, default 10)", type: "number" })
+        .example(
+          "$0 signals:search --keywords 'losing customers to churn' --icp 'B2B SaaS founders worried about retention'",
+          "Find people posting about churn right now"
+        )
+        .epilogue(
+          "This CREATES NOTHING: no signal agent, no saved leads. Use signals:create-agent for an audience that keeps filling up. Reading X live costs AI credits (at least 1) plus one of the plan's daily lead searches, and draws on a platform-wide fair-use ceiling shared by every account. Takes up to a minute."
+        ),
+    run(signalsSearch)
   )
   .command(
     "signals:leads",

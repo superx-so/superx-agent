@@ -30,6 +30,30 @@ export async function signalsLeads(argv: {
   );
 }
 
+/**
+ * One live keyword search for people on X now, scored against an ICP. It
+ * CREATES NOTHING: no agent, no saved leads. Costs AI credits and one of the
+ * plan's daily lead searches.
+ */
+export async function signalsSearch(argv: {
+  keywords: string;
+  icp: string;
+  precision?: string;
+  max?: number;
+  account?: string;
+}): Promise<void> {
+  const body: Record<string, unknown> = {
+    keywords: argv.keywords,
+    icp_description: argv.icp,
+  };
+  if (argv.precision) body.precision = argv.precision;
+  if (argv.max !== undefined) body.max_leads = argv.max;
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.searchLeads(body));
+}
+
 export async function signalsCreateAgent(argv: {
   name: string;
   icp: string;

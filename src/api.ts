@@ -324,6 +324,11 @@ export class SuperXAPI {
     return (await this.request("/signals/agents", { query })).json;
   }
 
+  /** One live keyword search for people on X now. Saves nothing. */
+  async searchLeads(body: unknown): Promise<any> {
+    return (await this.request("/signals/leads/search", { method: "POST", body })).json;
+  }
+
   async listSignalLeads(query: RequestOptions["query"] = {}): Promise<any> {
     return (await this.request("/signals/leads", { query })).json;
   }
@@ -576,6 +581,26 @@ export class SuperXAPI {
   /** Start a collection. Answers a ready dataset, or a collecting one (202). */
   async createDataset(body: unknown): Promise<any> {
     return (await this.request("/datasets", { method: "POST", body })).json;
+  }
+
+  /** Draft one outreach message per row of a research dataset. Text only. */
+  async draftOutreachDms(id: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/datasets/${encodeURIComponent(id)}/outreach-drafts`, {
+        method: "POST",
+        body,
+      })
+    ).json;
+  }
+
+  /** Filter a dataset by each row's text into a NEW dataset (200 or 202). */
+  async refineDataset(id: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/datasets/${encodeURIComponent(id)}/refine`, {
+        method: "POST",
+        body,
+      })
+    ).json;
   }
 
   // --- Audience (the four system people-lists) ---
