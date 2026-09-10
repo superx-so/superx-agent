@@ -98,3 +98,24 @@ export async function repliesReceived(argv: ListArgs): Promise<void> {
     })
   );
 }
+
+/**
+ * Rewrite a post in the account's voice. Text only: nothing is posted or
+ * scheduled, so save the result with posts:draft or scheduled:create.
+ */
+export async function postsRemix(argv: {
+  text: string;
+  closeness: number;
+  instructions?: string;
+  account?: string;
+}): Promise<void> {
+  const body: Record<string, unknown> = {
+    text: argv.text,
+    closeness: argv.closeness,
+  };
+  if (argv.instructions) body.instructions = argv.instructions;
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.remixPost(body));
+}

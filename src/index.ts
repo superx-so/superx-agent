@@ -4,7 +4,13 @@ import type { Argv } from "yargs";
 import { ApiError, note } from "./api";
 import { login, logout, status } from "./commands/auth";
 import { me, accounts } from "./commands/accounts";
-import { postsList, postsAnalytics, postsDraft, repliesList, repliesReceived } from "./commands/posts";
+import { postsList, postsAnalytics, postsDraft, postsRemix, repliesList, repliesReceived } from "./commands/posts";
+import {
+  toolsInlineEdit,
+  toolsRephrase,
+  toolsFactcheck,
+  toolsPredict,
+} from "./commands/tools";
 import { inspirationSearch, inspirationMedia } from "./commands/inspiration";
 import { xPost, xReplies, xUser, xUserPosts } from "./commands/x";
 import {
@@ -59,6 +65,7 @@ import {
   engageFeedsUpdate,
   engageFeedsDelete,
   engageMentions,
+  engageReplyDraft,
 } from "./commands/engage";
 import {
   scheduledList,
@@ -258,6 +265,122 @@ yargs(hideBin(process.argv))
         .example('$0 posts:draft --brief "..." --count 3 --mirror "$(cat proven-post.txt)"', "Three drafts copying a proven post shape")
         .example('$0 posts:draft --brief "..." --voice hybrid --creator @naval', "Your substance, a creator's flavor"),
     run(postsDraft)
+  )
+  .command(
+    "posts:remix",
+    "Rewrite a post in your voice, near or far from the original (nothing is posted; costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("text", {
+          describe: "The post to remix (required, max 4000 chars)",
+          type: "string",
+          demandOption: true,
+        })
+        .option("closeness", {
+          describe: "0 keeps only the idea, 100 stays very close to the original wording (required)",
+          type: "number",
+          demandOption: true,
+        })
+        .option("instructions", {
+          describe: "Extra direction for this remix (max 500 chars)",
+          type: "string",
+        })
+        .example('$0 posts:remix --text "$(cat post.txt)" --closeness 70', "A close rewrite in your voice")
+        .example('$0 posts:remix --text "..." --closeness 20 --instructions "make it a question"', "A loose reinterpretation")
+        .epilogue(
+          "Returns TEXT ONLY. Nothing is posted or scheduled: save the result with posts:draft or scheduled:create once you are happy with it."
+        ),
+    run(postsRemix)
+  )
+  .command(
+    "tools:inline-edit",
+    "Edit one selected piece of a post, keeping the surrounding style (costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("text", {
+          describe: "The selected piece to edit (required, max 4000 chars)",
+          type: "string",
+          demandOption: true,
+        })
+        .option("full", {
+          describe: "The whole post the selection sits in, so the edit matches its style",
+          type: "string",
+        })
+        .option("instruction", { describe: "Free-text direction, e.g. 'make this one line'", type: "string" })
+        .option("type", {
+          describe: "A preset edit instead of, or alongside, --instruction",
+          type: "string",
+          choices: [
+            "grammar",
+            "translate",
+            "hook",
+            "details",
+            "concise",
+            "engaging",
+            "humorous",
+            "creative",
+            "sarcastic",
+            "inspirational",
+          ],
+        })
+        .example('$0 tools:inline-edit --text "the hook line" --full "$(cat post.txt)" --type hook', "Sharpen the hook in place")
+        .epilogue("Provide --instruction, --type, or both. Returns TEXT ONLY; nothing is posted."),
+    run(toolsInlineEdit)
+  )
+  .command(
+    "tools:rephrase",
+    "Rewrite a post one preset way (costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("type", {
+          describe: "Which rewrite to apply. The style presets use your voice; the mechanical ones do not",
+          type: "string",
+          demandOption: true,
+          choices: [
+            "improve",
+            "grammar",
+            "translate",
+            "hook",
+            "details",
+            "clarity",
+            "engaging",
+            "humorous",
+            "positive",
+            "creative",
+            "sarcastic",
+            "inspirational",
+            "concise",
+          ],
+        })
+        .option("text", { describe: "The post to rewrite (required)", type: "string", demandOption: true })
+        .example('$0 tools:rephrase --type concise --text "$(cat post.txt)"', "Tighten a post")
+        .epilogue("Returns TEXT ONLY; nothing is posted."),
+    run(toolsRephrase)
+  )
+  .command(
+    "tools:factcheck",
+    "Check a statement against a web search and report true, false or unknown (costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("text", { describe: "The statement to check (required)", type: "string", demandOption: true })
+        .example('$0 tools:factcheck --text "X has 600M daily active users"', "Check a claim before posting it")
+        .epilogue(
+          "The verdict is a model's reading of a couple of search results, not a guarantee. Read the sources it returns before acting on it."
+        ),
+    run(toolsFactcheck)
+  )
+  .command(
+    "tools:predict",
+    "Score two versions of a post against what the timeline rewards (costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("a", { describe: "The first version (required)", type: "string", demandOption: true })
+        .option("b", { describe: "The second version (required)", type: "string", demandOption: true })
+        .example('$0 tools:predict --a "$(cat v1.txt)" --b "$(cat v2.txt)"', "Compare two drafts")
+        .epilogue(
+          "The scores are a model's opinion, useful for comparing two drafts against each other, not a prediction of real reach."
+        ),
+    run(toolsPredict)
   )
   .command(
     "replies:list",
@@ -1030,6 +1153,34 @@ yargs(hideBin(process.argv))
     (y: Argv) =>
       accountOption(y).positional("feedId", { describe: "Feed id (from engage:feeds)", type: "string" }),
     run(engageFeedsDelete)
+  )
+  .command(
+    "engage:reply-draft",
+    "Draft one reply to a post, in your voice (nothing is posted; costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("post", {
+          describe: "X post id to reply to; the API reads it live (costs one live lookup). Use instead of --text",
+          type: "string",
+        })
+        .option("text", { describe: "The post's text, supplied by you. Use instead of --post", type: "string" })
+        .option("author", { describe: "The author's display name, with --text", type: "string" })
+        .option("handle", { describe: "The author's @handle without the @, with --text", type: "string" })
+        .option("thoughts", {
+          describe: "What you want the reply to convey (max 2000 chars)",
+          type: "string",
+        })
+        .option("tone", {
+          describe: "Register for the reply",
+          type: "string",
+          choices: ["engaging", "humorous", "creative", "sarcastic", "inspirational", "concise"],
+        })
+        .example('$0 engage:reply-draft --post 1234567890 --thoughts "agree, and add that we saw the same thing"', "Draft a reply to a real post")
+        .example('$0 engage:reply-draft --text "hot take about pricing" --handle levelsio --tone concise', "Draft from text you paste in")
+        .epilogue(
+          "Provide exactly one of --post or --text. The draft is TEXT: nothing is posted or sent, a person reviews it and posts it."
+        ),
+    run(engageReplyDraft)
   )
   .command(
     "engage:mentions",

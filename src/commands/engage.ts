@@ -133,3 +133,39 @@ export async function engageMentions(argv: {
     })
   );
 }
+
+/**
+ * Draft ONE reply to a post, in the account's voice. Text only: nothing is
+ * posted or sent, a person reviews the draft and posts it.
+ */
+export async function engageReplyDraft(argv: {
+  post?: string;
+  text?: string;
+  author?: string;
+  handle?: string;
+  thoughts?: string;
+  tone?: string;
+  account?: string;
+}): Promise<void> {
+  const hasPost = !!argv.post;
+  const hasText = !!argv.text;
+  if (hasPost === hasText) {
+    note("Provide exactly one of --post <id> (read live) or --text \"the post\".");
+    process.exit(1);
+  }
+
+  const body: Record<string, unknown> = {};
+  if (hasPost) body.post_id = argv.post;
+  else {
+    const post: Record<string, unknown> = { text: argv.text };
+    if (argv.author) post.author_name = argv.author;
+    if (argv.handle) post.author_handle = argv.handle;
+    body.post = post;
+  }
+  if (argv.thoughts) body.thoughts = argv.thoughts;
+  if (argv.tone) body.tone = argv.tone;
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.draftReply(body));
+}

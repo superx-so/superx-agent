@@ -392,6 +392,37 @@ superx datasets:rows <dataset-id> --limit 50        # read every drafted message
 - Costs: `signals:search` is measured, at least 1 credit for a search that reaches X; `datasets:research` is a flat **1 credit per profile actually researched** (the rest are returned); `datasets:outreach-drafts` is measured and usually 1-3 credits. Research settles when the run finishes, so after a `--wait` read `superx status` for the pool rather than the response.
 - The two that read X live also carry per-plan day caps (`429 ai_action_limited`) and draw on a platform-wide fair-use ceiling shared by every account. On a 429 read `error.scope`: `"account"` means the user's own daily cap, `"platform"` means the shared ceiling and their own allowance is untouched - wait for `reset_at` and retry rather than telling them they are out.
 
+### Writing helpers (drafts, remix, edits, checks)
+
+```bash
+# One reply draft, in the user's voice (nothing is posted)
+superx engage:reply-draft --post 1234567890 --thoughts "agree, and we saw the same thing" --tone concise
+superx engage:reply-draft --text "hot take about pricing" --handle levelsio --author "Pieter Levels"
+
+# Rewrite a post, near or far from the original
+superx posts:remix --text "$(cat post.txt)" --closeness 70
+superx posts:remix --text "..." --closeness 20 --instructions "make it a question"
+
+# Change one selected piece, keeping the surrounding style
+superx tools:inline-edit --text "the hook line" --full "$(cat post.txt)" --type hook
+superx tools:inline-edit --text "..." --instruction "make this one line, lowercase"
+
+# One preset rewrite of a whole post
+superx tools:rephrase --type concise --text "$(cat post.txt)"
+
+# Check a claim, and compare two drafts
+superx tools:factcheck --text "X has 600M daily active users"
+superx tools:predict --a "$(cat v1.txt)" --b "$(cat v2.txt)"
+```
+
+- **Every one of these returns TEXT and posts NOTHING.** `engage:reply-draft` writes a reply for a person to review and post; there is still no reply-sending command anywhere in the CLI. Show the draft, let the user edit it, and never say a reply went out.
+- `engage:reply-draft` takes exactly one of `--post <id>` (the API reads the post live, so the draft sees the real text, author and any quoted post) or `--text` with optional `--author` and `--handle`. Add `--thoughts` with what the USER wants to say - ask them, never invent an opinion for them - and `--tone engaging|humorous|creative|sarcastic|inspirational|concise`. `--post` also spends one live X lookup on top of the credit.
+- `posts:remix` needs `--closeness` 0-100: 0 keeps only the idea, 100 stays very close to the original wording. Use it on a proven post the user wants to say again in their own words, then save the result with `posts:draft` or `scheduled:create`.
+- `tools:inline-edit` needs `--instruction`, `--type`, or both, and works best with `--full` so the edit blends into the post around it. `--type` presets: grammar, translate, hook, details, concise, engaging, humorous, creative, sarcastic, inspirational.
+- `tools:rephrase` presets: improve, grammar, translate, hook, details, clarity, engaging, humorous, positive, creative, sarcastic, inspirational, concise. The style ones write in the user's voice; grammar, translate, clarity, details and concise stay mechanical.
+- `tools:factcheck` reports `result` (true, false or unknown), a one-sentence `comment` and the `sources` it read. It is a model's reading of a couple of search results, NOT a guarantee: show the sources and never present the verdict as settled. `tools:predict` scores are an opinion for comparing two drafts against each other, not a prediction of reach.
+- Costs are measured AI credits: typically 1 each, and 2 for a remix or a reply draft. None of them spends a live X request except `engage:reply-draft --post`.
+
 ### Scheduling
 
 ```bash
@@ -608,7 +639,7 @@ superx articles:unschedule <article-id>           # back to draft, quota refunds
 superx articles:publish <article-id>              # LIVE NOW, irreversible, needs X Premium
 superx articles:delete <article-id>
 
-# AI cover (60-100s, spends AI credits against daily/monthly caps)
+# AI cover (60-100s, a flat 25 AI credits, plus the daily/monthly cover caps)
 superx articles:cover-styles                      # styles saved in the app, with their ids
 superx articles:cover <article-id>
 superx articles:cover <article-id> --style-id <style-id>          # render in a saved style
@@ -619,6 +650,7 @@ superx articles:cover <article-id> --style "dark, minimal, geometric" --no-attac
 - X enforces its own article limits (10 drafts/day, 5 publishes/day) and requires X Premium; those surface as publish failures.
 - `articles:cover` generates from the article's TITLE. Attach is the default; `--no-attach` keeps the current cover and you can attach later with `articles:update --cover-url`.
 - Steer the look with `--style-id` (one of the styles the user saved in the app, listed by `articles:cover-styles`) or `--style` (a one-off description), never both: passing both is a 400. An unknown style id is a 404 `cover_style_not_found`. Styles are saved and deleted in the app.
+- A cover generation costs a FLAT 25 AI credits on the API, whatever the render actually costs, and the response reports `meta.credits_charged`. A generation that fails outright is refunded in full; one that TIMES OUT keeps the charge because the cover may still have landed, so run `articles:get` and look at the cover before retrying.
 - A publish timeout is AMBIGUOUS: run `articles:get` and check `status` before retrying.
 
 ### Docs
@@ -747,6 +779,7 @@ superx scheduled:list --status scheduled
 49. **Nothing in the outreach chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto a research dataset and stops there; a person reviews and sends them from the SuperX app. Never say messages were sent and never offer to send them. Ask the user for the `--format`; never invent one. Re-running overwrites every draft, `generic` counts messages written with no personal claims (that brief had no usable hook), and `contaminated` counts drafts discarded for naming a different recipient - run it again to retry those rows.
 50. **`signals:search` saves nothing and `datasets:research` charges per profile.** A search creates no agent and no stored leads, so keep what the user needs from that response; use `signals:create-agent` when they want leads to keep arriving. Research is a flat 1 credit per profile ACTUALLY researched (handles that cannot be resolved, and people with no recent posts, come back in `skipped` and are refunded), and over 5 profiles it runs in the background: never state a brief count from a `collecting` result. `datasets:refine` also creates a dataset, so it spends one of the same 10 collections a day.
 51. **`ai_action_limited` has two scopes.** Read `error.scope` before telling the user anything: `"account"` is their plan's own daily cap for that action, `"platform"` is a fair-use ceiling on live-data actions shared by every SuperX account. On `"platform"` their own allowance is untouched, so wait for `reset_at` and retry rather than reporting them as out of quota.
+52. **The writing helpers draft, they never publish.** `engage:reply-draft`, `posts:remix`, `tools:inline-edit`, `tools:rephrase`, `tools:factcheck` and `tools:predict` all return TEXT and stop there - nothing is posted, scheduled or sent. Show the output, let the user edit it, and use `posts:draft`, `scheduled:create` or `posts:publish` when they say so. A `tools:factcheck` verdict is a model reading two search results: report it with its sources, never as settled fact.
 
 ---
 
@@ -848,6 +881,14 @@ superx scheduled:delete <id>
 
 # Publish NOW (irreversible; key required, reuse it on a retry)
 superx posts:publish --text "Post" --idempotency-key k1
+
+# Writing helpers (text in, text out; nothing is posted)
+superx engage:reply-draft --post <id> --thoughts "..." --tone concise
+superx posts:remix --text "..." --closeness 70
+superx tools:inline-edit --text "..." --full "..." --type hook
+superx tools:rephrase --type concise --text "..."
+superx tools:factcheck --text "..."
+superx tools:predict --a "..." --b "..."
 
 # Bulk queue operations (queued posts only; answers are counts)
 superx scheduled:bulk-retime --moves-json '[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]'

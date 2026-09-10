@@ -223,6 +223,34 @@ export class SuperXAPI {
     return (await this.request("/posts/draft", { method: "POST", body })).json;
   }
 
+  /** Rewrite a post in the account's voice. Nothing is posted or scheduled. */
+  async remixPost(body: unknown): Promise<any> {
+    return (await this.request("/posts/remix", { method: "POST", body })).json;
+  }
+
+  // --- Composer tools (text in, text out; nothing is posted) ---
+
+  async inlineEdit(body: unknown): Promise<any> {
+    return (await this.request("/tools/inline-edit", { method: "POST", body })).json;
+  }
+
+  async rephrase(body: unknown): Promise<any> {
+    return (await this.request("/tools/rephrase", { method: "POST", body })).json;
+  }
+
+  async factCheck(body: unknown): Promise<any> {
+    return (await this.request("/tools/factcheck", { method: "POST", body })).json;
+  }
+
+  async predictAlgorithm(body: unknown): Promise<any> {
+    return (await this.request("/tools/algorithm-predict", { method: "POST", body })).json;
+  }
+
+  /** Draft ONE reply to a post. Text only: a person posts it. */
+  async draftReply(body: unknown): Promise<any> {
+    return (await this.request("/engage/reply-draft", { method: "POST", body })).json;
+  }
+
   // --- Inspiration ---
 
   async searchInspiration(query: RequestOptions["query"] = {}): Promise<any> {
