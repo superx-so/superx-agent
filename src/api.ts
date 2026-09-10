@@ -702,6 +702,39 @@ export class SuperXAPI {
     return (await this.request("/inspiration/media", { query })).json;
   }
 
+  // --- DM campaigns (enqueue only: the SuperX app sends) ---
+
+  async queueDmCampaign(
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<{ json: any; replayed: boolean }> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+    const res = await this.request("/dm/campaigns", { method: "POST", body, headers });
+    return { json: res.json, replayed: res.headers.get("idempotency-replayed") === "true" };
+  }
+
+  async getDmCampaign(id: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request(`/dm/campaigns/${encodeURIComponent(id)}`, { query })).json;
+  }
+
+  async cancelDmCampaign(id: string, query: RequestOptions["query"] = {}): Promise<any> {
+    return (
+      await this.request(`/dm/campaigns/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        query,
+      })
+    ).json;
+  }
+
+  async listDmQueue(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/dm/queue", { query })).json;
+  }
+
+  async getDmLimits(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/dm/limits", { query })).json;
+  }
+
   // --- Docs (unauthenticated markdown) ---
 
   async docs(): Promise<string> {

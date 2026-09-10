@@ -88,6 +88,11 @@ interface AdvancedFlagArgs {
   "auto-delete-threshold"?: unknown;
   "auto-plug"?: string | boolean;
   "auto-plug-threshold"?: unknown;
+  "auto-dm"?: boolean;
+  "auto-dm-message"?: string;
+  "auto-dm-triggers"?: string;
+  "auto-dm-max"?: unknown;
+  "auto-dm-batch"?: boolean;
   "super-followers"?: boolean;
 }
 
@@ -120,6 +125,8 @@ function numericFlag(name: string, value: unknown): number | false | undefined {
  *    defaults; update: keep the post's current setting)
  * Same pattern for auto-delete and auto-plug. --super-followers /
  * --no-super-followers map to super_followers_only true/false.
+ * Auto DM: --auto-dm-message arms it (with optional --auto-dm-triggers,
+ * --auto-dm-max, --auto-dm-batch), --no-auto-dm clears it.
  */
 function applyAdvancedFlags(argv: AdvancedFlagArgs, body: Record<string, unknown>): void {
   const retweet = numericFlag("auto-retweet", argv["auto-retweet"]);
@@ -174,6 +181,48 @@ function applyAdvancedFlags(argv: AdvancedFlagArgs, body: Record<string, unknown
     body.auto_plug = { template_id: plug, threshold: plugThreshold };
   } else if (typeof plugThreshold === "number") {
     note("--auto-plug-threshold requires --auto-plug <templateId>.");
+    process.exit(1);
+  }
+
+  // Auto DM. --no-auto-dm clears it; --auto-dm-message arms it. The other
+  // three flags only refine a message that is being set.
+  const dmMessage = argv["auto-dm-message"];
+  const dmTriggers = argv["auto-dm-triggers"];
+  const dmMax = numericFlag("auto-dm-max", argv["auto-dm-max"]);
+  const dmBatch = argv["auto-dm-batch"];
+  const dmOff = argv["auto-dm"] === false;
+  if (dmOff) {
+    if (dmMessage !== undefined || dmTriggers !== undefined || typeof dmMax === "number" || dmBatch !== undefined) {
+      note("--auto-dm-* flags cannot be combined with --no-auto-dm.");
+      process.exit(1);
+    }
+    body.auto_dm = null;
+  } else if (typeof dmMessage === "string" && dmMessage.length > 0) {
+    const autoDm: Record<string, unknown> = { message: dmMessage };
+    if (typeof dmTriggers === "string") {
+      const wanted = dmTriggers
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+      // `retweet` is the stored blob's own key and the name the read DTO
+      // reports, so accept it as an alias of `repost` here too.
+      const unknown = wanted.filter(
+        (t) => t !== "reply" && t !== "repost" && t !== "retweet"
+      );
+      if (unknown.length > 0 || wanted.length === 0) {
+        note("--auto-dm-triggers takes a comma list of reply,repost (retweet is accepted as an alias of repost).");
+        process.exit(1);
+      }
+      autoDm.triggers = {
+        reply: wanted.includes("reply"),
+        repost: wanted.includes("repost") || wanted.includes("retweet"),
+      };
+    }
+    if (typeof dmMax === "number") autoDm.max_dms = dmMax;
+    if (typeof dmBatch === "boolean") autoDm.batch_mode = dmBatch;
+    body.auto_dm = autoDm;
+  } else if (dmTriggers !== undefined || typeof dmMax === "number" || dmBatch !== undefined) {
+    note("--auto-dm-triggers, --auto-dm-max and --auto-dm-batch require --auto-dm-message <text>.");
     process.exit(1);
   }
 

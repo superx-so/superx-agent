@@ -523,7 +523,7 @@ superx scheduled:update <post-id> --clear-tags --clear-title --clear-scratchpad
 - A new `--at` alone never schedules a draft. Promotion is always explicit via `--status scheduled` (which needs a future time, provided or already set).
 - CAUTION: replacement text is a FULL replace, media included. `--text` without `--media` REMOVES any images the post carried; re-list the current `object_key`s (visible in `scheduled:list`) to keep them. Title, scratchpad, tag, and time edits never touch media.
 
-### Advanced settings (auto retweet, auto delete, auto plug, super followers)
+### Advanced settings (auto retweet, auto delete, auto plug, auto DM, super followers)
 
 ```bash
 # Explicit values on create
@@ -543,16 +543,40 @@ superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
 superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
   --no-auto-retweet --no-auto-plug
 
+# Auto DM the people who engage with the post once it is live
+superx scheduled:create --text "Post" --at "2026-08-01T15:00:00Z" \
+  --auto-dm-message "Hey [first], here is the template I mentioned" \
+  --auto-dm-triggers reply,repost --auto-dm-max 50
+
 # Edit or remove on an existing post (no inheritance on update)
 superx scheduled:update <post-id> --auto-retweet 2
 superx scheduled:update <post-id> --no-auto-delete
+superx scheduled:update <post-id> --no-auto-dm            # also gives back the month's slot
 ```
 
 - On `scheduled:create`, flags you OMIT inherit the user's Default Post Settings from the SuperX app; that is the expected behavior, not a bug. Exactly five settings inherit (auto retweet, auto delete, auto plug, auto DM, Super Followers only); other composer defaults like Bluesky cross-posting never apply to API posts. Use the `--no-*` forms to turn a default off for one post.
 - On `scheduled:update` there is no inheritance: passed flags override, omitted flags keep the post's current settings, `--no-*` removes them.
 - Hours are 1-12. `--auto-plug` needs `--auto-plug-threshold` (likes); template ids come from `plug-templates:list`, unknown ids fail with `unknown_plug_template`. `--super-followers` / `--no-super-followers` toggle Super Followers only.
-- Auto DM has no flag: it always follows the user's app defaults. If a plan limit strips it at create time, the response carries `"auto_dm_skipped": true`; relay that to the user instead of ignoring it.
+- Auto DM: `--auto-dm-message` (1-1000, `[name]` / `[first]` / `[handle]` are filled per recipient) arms it, with optional `--auto-dm-triggers reply,repost` (default reply only), `--auto-dm-max` 1-100 and `--auto-dm-batch`. `--no-auto-dm` turns it off for the post. Omitted, it follows the user's app defaults. The plan caps how many posts a month may carry one (`dm:limits` -> `posts_with_auto_dm`): when that cap strips it the post is still created and the response carries `"auto_dm_skipped": true`, so relay that instead of ignoring it. Reading a post back never shows the DM text, only that one is attached.
 - `scheduled:list` shows the applied settings per post (`auto_retweet`, `auto_delete`, `auto_plug`, `auto_dm`, `super_followers_only`), so you can verify what a post will actually do.
+
+### DM campaigns (queue only; the app sends)
+
+```bash
+superx dm:limits                                  # allowances before you queue anything
+superx dm:campaign --recipients people.json --message "Hey [first], loved your thread"
+superx dm:campaign --recipients=- --message "..." --spread    # recipients from stdin
+superx dm:campaign-status <campaign-id>           # counts per status + the messages
+superx dm:queue --status pending                  # everything still waiting to go out
+superx dm:cancel <campaign-id>                    # remove the unsent ones
+```
+
+- **Nothing is sent by these commands.** `dm:campaign` puts messages into the account's own DM queue and the SuperX app's scheduler sends them within the account's daily and monthly limits. The reply is COUNTS (`queued`, `queued_now`, `scheduled`, `skipped`, `duplicates`), never deliveries, so never tell the user their messages went out: point them at `dm:campaign-status`.
+- The user is responsible for these messages under X's automation rules. Confirm the recipient list and the exact text with them before queueing, and do not queue a campaign they did not ask for.
+- `--recipients` takes a JSON file (or `--recipients=-` for stdin; the `=` is required) of `[{ "x_user_id", "handle"?, "name"?, "message"?, "source_post_id"? }]`, up to 100 people. Ids come from `signals:leads`, `datasets:rows` or `lists:members`. A recipient's own `message` overrides the shared one. `[name]`, `[first]` and `[handle]` are filled per person.
+- People this account messaged in the last 24 hours are skipped and counted in `duplicates`, and the account never messages itself. `--spread` places whatever today's daily allowance cannot hold over the coming days instead of skipping it.
+- `dm:cancel` deletes the campaign's UNSENT rows, queued-for-now and scheduled-for-later alike, and gives the monthly commitment back. Sent messages cannot be recalled and one already going out cannot be stopped.
+- Costs no AI credits. Refusals come back as `dm_limit_reached` with `scope` `month` or `day`, `dm_not_in_plan` when the plan has no DM allowance, and `reauth_required` when the X account needs reconnecting in the app.
 
 ### Tags
 
@@ -783,11 +807,12 @@ superx scheduled:list --status scheduled
 46. **`audience:list` pages by cursor, not by page number.** Pass `pagination.next_cursor` back as `--cursor`; there is no `--page` and no `total`. Quote `meta.synced_count` for the size of the list, but note it may exceed the rows a full walk returns (edges that were later removed are still counted). Check `meta.status`: anything but `complete` means SuperX is still syncing, and `meta.is_capped: true` on the follow lists means it is the most recent slice, not everyone. `meta.account_id` is the account id you pass to `--account`; the X user id is `meta.x_account_id`. Repliers and reposters only cover a rolling 90 days.
 47. **`engage:mentions` costs 3 feed fetches per call and shows more than the app.** It draws on the same daily feed allowance as `engage:posts`, so read one page and work from it rather than polling. It does NOT apply the skipped/blocked filtering the app's Mentions tab does (that lives with the app), and by default it leaves out mentions already replied to on X unless you pass `--include-replied true`.
 48. **`datasets:collect` can return before the collection is done.** `status: "collecting"` means zero rows so far and work still running: use `--wait`, or poll `datasets:get` until `ready`, and never state a row count from the create result. A collection whose size cannot be established up front also runs in the background. It costs one of 10 collections a day shared with Ask SuperX in the app, only one runs per account at a time (409 `collection_in_progress`), and an empty result creates no dataset at all (`data: null` plus a `note`) and gives the daily slot back.
-49. **Nothing in the outreach chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto a research dataset and stops there; a person reviews and sends them from the SuperX app. Never say messages were sent and never offer to send them. Ask the user for the `--format`; never invent one. Re-running overwrites every draft, `generic` counts messages written with no personal claims (that brief had no usable hook), and `contaminated` counts drafts discarded for naming a different recipient - run it again to retry those rows.
+49. **Nothing in the outreach chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto a research dataset and stops there; a person reviews and sends them from the SuperX app. Never say messages were sent and never offer to send them. If the user explicitly asks, you may QUEUE them with `dm:campaign` (one recipient entry per person, each with its own `message`), which is still an enqueue: the app sends. Ask the user for the `--format`; never invent one. Re-running overwrites every draft, `generic` counts messages written with no personal claims (that brief had no usable hook), and `contaminated` counts drafts discarded for naming a different recipient - run it again to retry those rows.
 50. **`signals:search` saves nothing and `datasets:research` charges per profile.** A search creates no agent and no stored leads, so keep what the user needs from that response; use `signals:create-agent` when they want leads to keep arriving. Research is a flat 1 credit per profile ACTUALLY researched (handles that cannot be resolved, and people with no recent posts, come back in `skipped` and are refunded), and over 5 profiles it runs in the background: never state a brief count from a `collecting` result. `datasets:refine` also creates a dataset, so it spends one of the same 10 collections a day.
 51. **`ai_action_limited` has two scopes.** Read `error.scope` before telling the user anything: `"account"` is their plan's own daily cap for that action, `"platform"` is a fair-use ceiling on live-data actions shared by every SuperX account. On `"platform"` their own allowance is untouched, so wait for `reset_at` and retry rather than reporting them as out of quota.
 52. **The writing helpers draft, they never publish.** `engage:reply-draft`, `posts:remix`, `tools:inline-edit`, `tools:rephrase`, `tools:factcheck` and `tools:predict` all return TEXT and stop there - nothing is posted, scheduled or sent. Show the output, let the user edit it, and use `posts:draft`, `scheduled:create` or `posts:publish` when they say so. A `tools:factcheck` verdict is a model reading two search results: report it with its sources, never as settled fact.
 53. **The free helpers cost nothing but are not unlimited.** `context:regenerate-style-guide` is once an hour per account and does not override a manual style-guide setting; `context:scrape-product` and `signals:expand-icp --url` share 20 page reads a day with the SuperX app, and `--url` also inherits the app's limit of 10 prefills per 10 minutes (that one comes back as `rate_limited` and clears in about a minute, so retry rather than reporting a daily budget); `signals:suggest-keywords` and `signals:expand-icp --text` have no ceiling of their own, so do not loop them - each one is a model call. All five send `X-Credits-Remaining` but no `X-Credits-Charged`, because nothing was charged. All four commands still need a key with the write scope: they are POSTs, and every non-GET API route needs it.
+54. **A DM campaign is an ENQUEUE, not a send.** `dm:campaign` returns counts of what was QUEUED; the SuperX app's scheduler sends them later, within the account's daily and monthly DM limits, so never report messages as delivered from that response - `dm:campaign-status` and `dm:queue` show what actually went out. Confirm the recipient list and the exact text with the user first: they are responsible for these messages under X's automation rules. Cancel the unsent ones with `dm:cancel`; anything already sent cannot be recalled.
 
 ---
 
@@ -897,6 +922,13 @@ superx tools:inline-edit --text "..." --full "..." --type hook
 superx tools:rephrase --type concise --text "..."
 superx tools:factcheck --text "..."
 superx tools:predict --a "..." --b "..."
+
+# DM campaigns (queued only; the SuperX app sends them)
+superx dm:limits
+superx dm:campaign --recipients people.json --message "Hey [first], ..."
+superx dm:campaign-status <campaign-id>
+superx dm:queue --status pending
+superx dm:cancel <campaign-id>
 
 # Free helpers (no AI credits)
 superx context:regenerate-style-guide

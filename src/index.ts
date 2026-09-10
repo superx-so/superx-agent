@@ -104,6 +104,13 @@ import {
   contextRegenerateStyleGuide,
   contextScrapeProduct,
 } from "./commands/context";
+import {
+  dmCampaign,
+  dmCampaignStatus,
+  dmCancel,
+  dmQueue,
+  dmLimits,
+} from "./commands/dm";
 import { queueGet, queueSet } from "./commands/queue";
 import { docs } from "./commands/docs";
 
@@ -169,6 +176,25 @@ const advancedSettingsOptions = (y: Argv) =>
     })
     .option("auto-plug-threshold", {
       describe: "Likes threshold for --auto-plug: the reply posts once the post hits this many likes",
+    })
+    .option("auto-dm-message", {
+      describe: "Auto DM text (1-1000) sent to people who engage with the post; --no-auto-dm turns it off",
+      type: "string",
+    })
+    .option("auto-dm-triggers", {
+      describe: "Who gets the auto DM: comma list of reply,repost (retweet = repost). Default reply",
+      type: "string",
+    })
+    .option("auto-dm-max", {
+      describe: "Most people to auto DM for this post (1-100, default 100)",
+    })
+    .option("auto-dm-batch", {
+      describe: "Send the auto DMs in one batch instead of as engagement arrives",
+      type: "boolean",
+    })
+    .option("auto-dm", {
+      describe: "Only the negated form is used: --no-auto-dm turns Auto DM off for this post",
+      type: "boolean",
     })
     .option("super-followers", {
       describe: "Post to Super Followers only (--no-super-followers turns it off)",
@@ -1766,6 +1792,77 @@ yargs(hideBin(process.argv))
         })
         .example("$0 articles:cover abc123 --style-id sty_9f2", "Generate in a saved style"),
     run(articlesCover)
+  )
+  .command(
+    "dm:campaign",
+    "Queue direct messages to a list of X users (nothing is sent by this command)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("recipients", {
+          describe: 'JSON file of [{ "x_user_id", "handle"?, "name"?, "message"? }]; --recipients=- reads stdin',
+          type: "string",
+          demandOption: true,
+        })
+        .option("message", {
+          describe: "The shared message (1-1000). [name], [first] and [handle] are filled per recipient",
+          type: "string",
+        })
+        .option("spread", {
+          describe: "Spread what today's allowance cannot hold over the coming days instead of skipping it",
+          type: "boolean",
+        })
+        .option("idempotency-key", {
+          describe: "Reuse the same key on a retry so one campaign is never queued twice",
+          type: "string",
+        })
+        .example(
+          '$0 dm:campaign --recipients people.json --message "Hey [first], loved your post"',
+          "Queue a campaign from a file"
+        )
+        .epilogue(
+          "NOTHING IS SENT BY THIS COMMAND. The messages go into your DM queue and the SuperX app sends them within your daily and monthly DM limits, so the reply is counts, not deliveries. People you messaged in the last 24 hours are skipped and your own account is never messaged. You are responsible for these messages under X's automation rules. Check your allowances with dm:limits and cancel the unsent ones with dm:cancel."
+        ),
+    run(dmCampaign)
+  )
+  .command(
+    "dm:campaign-status <id>",
+    "Show one campaign's status counts and its individual messages",
+    (y: Argv) =>
+      accountOption(
+        y.positional("id", { describe: "Campaign id (from dm:campaign)", type: "string" })
+      ),
+    run(dmCampaignStatus)
+  )
+  .command(
+    "dm:cancel <id>",
+    "Cancel a campaign's unsent messages (sent ones cannot be recalled)",
+    (y: Argv) =>
+      accountOption(
+        y.positional("id", { describe: "Campaign id (from dm:campaign)", type: "string" })
+      ),
+    run(dmCancel)
+  )
+  .command(
+    "dm:queue",
+    "List the account's queued and recently sent direct messages",
+    (y: Argv) =>
+      accountOption(y)
+        .option("limit", { describe: "Rows per page (max 200, default 50)", type: "number" })
+        .option("offset", { describe: "Rows to skip", type: "number" })
+        .option("status", {
+          describe: "Only rows in this state",
+          type: "string",
+          choices: ["pending", "sending", "sent", "failed", "skipped"],
+        })
+        .option("campaign", { describe: "Only rows from this campaign id", type: "string" })
+        .example("$0 dm:queue --status pending", "What is still waiting to go out"),
+    run(dmQueue)
+  )
+  .command(
+    "dm:limits",
+    "Show the account's DM allowances and how much of each is used (free)",
+    (y: Argv) => accountOption(y),
+    run(dmLimits)
   )
   .command("docs", "Print the SuperX API quickstart (markdown, no auth needed)", {}, run(docs))
   .demandCommand(1, "Specify a command. Run: superx --help")
