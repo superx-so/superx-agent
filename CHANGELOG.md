@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-09-11)
 
 - Playbooks: a new `PLAYBOOKS.md` ships with the package, holding 28 goal-shaped recipes, one per SuperX skill (weekly recap, week of posts, queue reshuffle, reply sprint, lead hunt, audience export, warm outreach and the rest). Each entry gives the CLI chain in order, the equivalent MCP tool chain, and where the chain STOPS: the four that stop short of a send say so in the entry, because no reply is posted and no DM is delivered from here. `SKILL.md` gains a `## Playbooks` index so an agent can pick a recipe by goal before opening the file
 - DM campaigns: `dm:campaign --recipients <file>` (or `--recipients=-` for stdin) `--message` queues direct messages to up to 100 X users, `dm:campaign-status <id>` shows the counts per status, `dm:queue` lists the whole queue (`--status`, `--campaign`), `dm:cancel <id>` removes a campaign's unsent messages and `dm:limits` shows the account's allowances. NOTHING IS SENT BY THESE COMMANDS: the messages go into the account's own DM queue and the SuperX app's scheduler sends them within its daily and monthly DM limits, so the reply is counts, not deliveries. People messaged in the last 24 hours are skipped, the account never messages itself, `[name]` / `[first]` / `[handle]` are filled per recipient, and `--spread` places what today's allowance cannot hold over the coming days. Costs no AI credits
