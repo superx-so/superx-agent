@@ -186,3 +186,39 @@ export async function contextProductsReplace(argv: {
   const api = new SuperXAPI(getConfig());
   printJson(await api.setContextProducts(body));
 }
+
+/**
+ * Rebuild the GENERATED style guide from the account's recent posts (the
+ * Context page button). Free: no AI credits. Once an hour per account; your
+ * manual style-guide overrides are left alone.
+ */
+export async function contextRegenerateStyleGuide(argv: {
+  account?: string;
+}): Promise<void> {
+  const body: Record<string, any> = {};
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.regenerateStyleGuide(body));
+}
+
+/**
+ * Re-read a saved product's page and refresh its stored name, description
+ * and details. The url comes from the saved product, never from a flag.
+ * Free, on the account's shared allowance of 20 page reads a day.
+ */
+export async function contextScrapeProduct(argv: {
+  id?: string;
+  account?: string;
+}): Promise<void> {
+  const id = String(argv.id || "").trim();
+  if (!id) {
+    note("Provide the product id (from context:products). Run: superx context:scrape-product --help");
+    process.exit(1);
+  }
+  const body: Record<string, any> = {};
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.scrapeContextProduct(id, body));
+}

@@ -57,6 +57,8 @@ import {
   signalsAddSignal,
   signalsRemoveSignal,
   signalsFeedback,
+  signalsSuggestKeywords,
+  signalsExpandIcp,
 } from "./commands/signals";
 import {
   engageFeeds,
@@ -99,6 +101,8 @@ import {
   contextProductsSet,
   contextProductsDelete,
   contextProductsReplace,
+  contextRegenerateStyleGuide,
+  contextScrapeProduct,
 } from "./commands/context";
 import { queueGet, queueSet } from "./commands/queue";
 import { docs } from "./commands/docs";
@@ -1045,6 +1049,48 @@ yargs(hideBin(process.argv))
     run(signalsFeedback)
   )
   .command(
+    "signals:suggest-keywords",
+    "Turn an audience description into 2 or 3 keyword-watch ideas (free, creates nothing)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("icp", {
+          describe: "Who the ideal customer is, in plain language (3 to 500 chars)",
+          type: "string",
+          demandOption: true,
+        })
+        .example(
+          `$0 signals:suggest-keywords --icp "B2B SaaS founders worried about churn"`,
+          "Ideas to watch for that audience"
+        )
+        .epilogue(
+          "Saves nothing and costs no AI credits. Pass a suggestion you like to signals:create-agent --keyword, or signals:add-signal --type keyword_watch."
+        ),
+    run(signalsSuggestKeywords)
+  )
+  .command(
+    "signals:expand-icp",
+    "Build the scoring rubric a signal agent qualifies people with, from a description or a website (free)",
+    (y: Argv) =>
+      accountOption(y)
+        .option("text", {
+          describe: "Who the ideal customer is, in plain language (3 to 500 chars)",
+          type: "string",
+        })
+        .option("url", {
+          describe: "A product or company website to read instead; also returns a description and keyword ideas",
+          type: "string",
+        })
+        .example(
+          `$0 signals:expand-icp --text "Indie founders building SaaS in public"`,
+          "Rubric from a description"
+        )
+        .example("$0 signals:expand-icp --url superx.so", "Rubric, description and keyword ideas from a site")
+        .epilogue(
+          "Provide --text or --url, not both. Saves nothing and costs no AI credits; --url reads a page on the account's allowance of 20 page reads a day, shared with the SuperX app, and takes up to a minute. The rubric is a reading of the description, not a field you can store: agents are created with --icp, so use it to sharpen that text first. With --url, the icp_description it returns is what you pass to signals:create-agent --icp."
+        ),
+    run(signalsExpandIcp)
+  )
+  .command(
     "signals:pause-agent <id>",
     "Pause a signal agent (it stops finding leads until resumed)",
     (y: Argv) => y.positional("id", { describe: "Agent id (from signals:agents)", type: "number" }),
@@ -1538,6 +1584,29 @@ yargs(hideBin(process.argv))
           "CAUTION: this is a full replace by url. Read the current list with context:products first and send every product the account should keep; to change one product without touching the others, use context:products:set."
         ),
     run(contextProductsReplace)
+  )
+  .command(
+    "context:regenerate-style-guide",
+    "Rebuild the generated style guide from the account's recent posts (free, once an hour)",
+    (y: Argv) =>
+      accountOption(y)
+        .example("$0 context:regenerate-style-guide", "Rewrite the guide for the main account")
+        .epilogue(
+          "Costs no AI credits. Your manual style-guide overrides (context:set --style-audience / --style-vocabulary) are left alone and keep outranking the generated guide. An account with fewer than 5 recent posts stored is read live, which draws on a platform-wide fair-use ceiling."
+        ),
+    run(contextRegenerateStyleGuide)
+  )
+  .command(
+    "context:scrape-product <id>",
+    "Re-read a saved product's page and refresh its stored details (free)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Product id (from context:products)", type: "string" })
+        .example("$0 context:scrape-product 3", "Refresh product 3 from its own url")
+        .epilogue(
+          "The url comes from the saved product, so change it with context:products:set first if it moved. Costs no AI credits, and runs on the account's allowance of 20 page reads a day, shared with the SuperX app."
+        ),
+    run(contextScrapeProduct)
   )
   .command(
     "queue:get",

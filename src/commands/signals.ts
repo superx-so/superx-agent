@@ -208,3 +208,48 @@ export async function signalsFeedback(argv: {
   const api = new SuperXAPI(getConfig());
   printJson(await api.setLeadFeedback(argv.leadId, body));
 }
+
+/**
+ * Audience description -> 2 or 3 keyword-watch ideas. Free and creates
+ * nothing: pass one you like to signals:create-agent or signals:add-signal.
+ */
+export async function signalsSuggestKeywords(argv: {
+  icp: string;
+  account?: string;
+}): Promise<void> {
+  const body: Record<string, unknown> = { icp_description: argv.icp };
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.suggestKeywords(body));
+}
+
+/**
+ * Audience description (--text) or a website (--url) -> the structured
+ * scoring rubric signal agents qualify people with. --url also returns an
+ * audience description and keyword ideas. Free and creates nothing; the
+ * rubric has no API field to save it into, so it is for sharpening the
+ * description you pass to signals:create-agent --icp.
+ */
+export async function signalsExpandIcp(argv: {
+  text?: string;
+  url?: string;
+  account?: string;
+}): Promise<void> {
+  const text = (argv.text || "").trim();
+  const url = (argv.url || "").trim();
+  if (!text && !url) {
+    note("Provide --text with an audience description, or --url with a website.");
+    process.exit(1);
+  }
+  if (text && url) {
+    note("Use either --text or --url, not both.");
+    process.exit(1);
+  }
+
+  const body: Record<string, unknown> = url ? { url } : { icp_description: text };
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(url ? await api.expandIcpFromUrl(body) : await api.expandIcp(body));
+}

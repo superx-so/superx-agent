@@ -386,6 +386,7 @@ superx datasets:rows <dataset-id> --limit 50        # read every drafted message
 ```
 
 - **Nothing in this chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto the dataset's `message` column and stops there. A person reviews and sends them from the SuperX app. Never tell the user their messages have gone out, and never imply the CLI can send them.
+- `signals:suggest-keywords --icp "..."` and `signals:expand-icp (--text | --url)` stage what a new agent needs before you create one: keyword ideas, and the rubric the scorer reads the ICP as. Both are FREE and create nothing. Pass a suggestion to `signals:create-agent --keyword`; the rubric has nowhere to be saved (agents are created with `--icp`), so use it to sharpen that text. `--url` reads a website and also returns an `icp_description` to pass straight to `--icp`; it costs one of the account's 20 page reads a day, shared with the app, and takes up to a minute.
 - `signals:search` needs a key with the **write** scope (every non-GET API route does), even though it CREATES NOTHING. The leads exist only in that response, so save what you need. For an audience that keeps filling up on its own, use `signals:create-agent` instead. It takes up to a minute, and each lead comes from ONE matched post: `posts_count` is lifetime volume, not proof of current activity.
 - `datasets:research` needs exactly one of `--handles` (max 25), `--list`, `--agent` or `--dataset`, and `--max` is 1-25 (default 10). Every hook in a brief QUOTES one of the person's real posts; proposed quotes that failed the verbatim check are dropped server-side, so a brief with no hooks is honest, not broken. More than 5 profiles run in the background (`202 collecting`) - pass `--wait` or poll `datasets:get`.
 - `datasets:outreach-drafts` needs a `--format` from the USER: their template or an example message. Never invent one. `[name]`, `[first]` and `[handle]` are kept intact for per-recipient fill-in at send time. A brief with no usable hook gets an honest generic message counted in `generic`, and a draft that names a DIFFERENT recipient is discarded and counted in `contaminated` (run it again to retry those rows). Re-running overwrites every draft.
@@ -587,10 +588,16 @@ superx context:products:set --url "https://superx.so" --name "SuperX" --descript
 superx context:products:set --id 3 --updates "Shipped the public API"
 superx context:products:delete <product-id>
 superx context:products:replace --json '[{"url":"https://superx.so","name":"SuperX"}]'   # FULL REPLACE
+
+# Free helpers (no AI credits)
+superx context:regenerate-style-guide                # rebuild the generated guide; once an hour
+superx context:scrape-product <product-id>           # re-read that product's page and refresh it
 ```
 
 - What each setting affects: `--profile-description` grounds the AI's voice and personalizes the daily content mix and search; `--rules` are mandatory instructions on EVERY AI surface; `--reply-rules` and `--reply-author-name` steer generated replies; `--favorite-creators` (X usernames, max 3) inspire the writing style; `--interests` are the highest-priority topics for content suggestions; `--style-audience`/`--style-vocabulary` outrank the app's generated style guide until cleared.
 - `context:get` also returns the read-only generated style guide (`style_guide.generated`) so you can see what a cleared override falls back to.
+- `context:regenerate-style-guide` rewrites that generated guide from the account's recent posts. Free, once an hour per account (429 `ai_action_limited`, `scope: "account"`, `reset_at` an hour after the last run), and it takes up to a minute. It does NOT touch `--style-audience` / `--style-vocabulary`, which keep outranking it, so a user who set overrides sees no change in output until they clear them. An account with fewer than 5 recent posts stored has them read live: that leg allows 3 attempts a day and also draws on the shared platform ceiling (both 429 `ai_action_limited`, `scope` `account` and `platform` respectively), and still too few posts returns 400 `not_enough_posts`. Shared accounts refuse it.
+- `context:scrape-product <id>` re-reads a product's page and refreshes its stored name, description and details. The url comes from the SAVED product, so fix a moved url with `context:products:set --id` first. Free, on the account's 20 page reads a day shared with the app; a page that cannot be read returns 422 `scrape_failed`.
 - Caps: profile description 500, rules 500, reply rules 500, style audience 600, style vocabulary 1000 characters; 30 interests of 50 characters each; 3 favorite creators; 5 products.
 - `context:products:set --url` creates the product when it does not exist. Removing a product is reversible: re-adding the same url restores its scraped details.
 - `context:products:replace` REPLACES the whole product list: any product whose url is missing from the array is removed. Read `context:products` first and send every product the user should keep, or use `context:products:set` to change one in place. `'[]'` removes every product.
@@ -780,6 +787,7 @@ superx scheduled:list --status scheduled
 50. **`signals:search` saves nothing and `datasets:research` charges per profile.** A search creates no agent and no stored leads, so keep what the user needs from that response; use `signals:create-agent` when they want leads to keep arriving. Research is a flat 1 credit per profile ACTUALLY researched (handles that cannot be resolved, and people with no recent posts, come back in `skipped` and are refunded), and over 5 profiles it runs in the background: never state a brief count from a `collecting` result. `datasets:refine` also creates a dataset, so it spends one of the same 10 collections a day.
 51. **`ai_action_limited` has two scopes.** Read `error.scope` before telling the user anything: `"account"` is their plan's own daily cap for that action, `"platform"` is a fair-use ceiling on live-data actions shared by every SuperX account. On `"platform"` their own allowance is untouched, so wait for `reset_at` and retry rather than reporting them as out of quota.
 52. **The writing helpers draft, they never publish.** `engage:reply-draft`, `posts:remix`, `tools:inline-edit`, `tools:rephrase`, `tools:factcheck` and `tools:predict` all return TEXT and stop there - nothing is posted, scheduled or sent. Show the output, let the user edit it, and use `posts:draft`, `scheduled:create` or `posts:publish` when they say so. A `tools:factcheck` verdict is a model reading two search results: report it with its sources, never as settled fact.
+53. **The free helpers cost nothing but are not unlimited.** `context:regenerate-style-guide` is once an hour per account and does not override a manual style-guide setting; `context:scrape-product` and `signals:expand-icp --url` share 20 page reads a day with the SuperX app, and `--url` also inherits the app's limit of 10 prefills per 10 minutes (that one comes back as `rate_limited` and clears in about a minute, so retry rather than reporting a daily budget); `signals:suggest-keywords` and `signals:expand-icp --text` have no ceiling of their own, so do not loop them - each one is a model call. All five send `X-Credits-Remaining` but no `X-Credits-Charged`, because nothing was charged. All four commands still need a key with the write scope: they are POSTs, and every non-GET API route needs it.
 
 ---
 
@@ -889,6 +897,13 @@ superx tools:inline-edit --text "..." --full "..." --type hook
 superx tools:rephrase --type concise --text "..."
 superx tools:factcheck --text "..."
 superx tools:predict --a "..." --b "..."
+
+# Free helpers (no AI credits)
+superx context:regenerate-style-guide
+superx context:scrape-product <product-id>
+superx signals:suggest-keywords --icp "B2B SaaS founders worried about churn"
+superx signals:expand-icp --text "Indie founders building SaaS in public"
+superx signals:expand-icp --url superx.so
 
 # Bulk queue operations (queued posts only; answers are counts)
 superx scheduled:bulk-retime --moves-json '[{"id":"abc","scheduled_for":"2026-09-08T15:00:00Z"}]'

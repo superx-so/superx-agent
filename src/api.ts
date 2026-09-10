@@ -361,6 +361,21 @@ export class SuperXAPI {
     return (await this.request("/signals/leads", { query })).json;
   }
 
+  /** Audience description -> keyword-watch ideas. Free, creates nothing. */
+  async suggestKeywords(body: unknown): Promise<any> {
+    return (await this.request("/signals/keywords/suggest", { method: "POST", body })).json;
+  }
+
+  /** Audience description -> scoring rubric. Free, creates nothing. */
+  async expandIcp(body: unknown): Promise<any> {
+    return (await this.request("/signals/icp/expand", { method: "POST", body })).json;
+  }
+
+  /** Website -> audience description + rubric + keyword ideas. Free. */
+  async expandIcpFromUrl(body: unknown): Promise<any> {
+    return (await this.request("/signals/icp/expand-from-url", { method: "POST", body })).json;
+  }
+
   async createSignalAgent(body: unknown, idempotencyKey?: string): Promise<{ json: any; replayed: boolean }> {
     const headers: Record<string, string> = {};
     if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
@@ -496,6 +511,23 @@ export class SuperXAPI {
   /** Full replace of the account's product list (max 5). */
   async setContextProducts(body: unknown): Promise<any> {
     return (await this.request("/context/products", { method: "PUT", body })).json;
+  }
+
+  /** Rebuild the generated style guide from recent posts. Free, once an hour. */
+  async regenerateStyleGuide(body: unknown): Promise<any> {
+    return (
+      await this.request("/context/style-guide/regenerate", { method: "POST", body })
+    ).json;
+  }
+
+  /** Re-read a saved product's page and refresh its stored details. Free. */
+  async scrapeContextProduct(id: string, body: unknown): Promise<any> {
+    return (
+      await this.request(`/context/products/${encodeURIComponent(id)}/scrape`, {
+        method: "POST",
+        body,
+      })
+    ).json;
   }
 
   // --- Queue settings ---
