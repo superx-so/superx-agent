@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Docs and help text only: `posts:draft --voice mine` writes in the voice of the account you pass in `--account` (your main account when omitted, using that account's own posts and style guide), and `posts:draft` returns 403 `writes_main_account_only` on an account shared with you, unlike the other writing helpers
+
 ## 0.4.0 (2026-09-11)
 
 - Playbooks: a new `PLAYBOOKS.md` ships with the package, holding 28 goal-shaped recipes, one per SuperX skill (weekly recap, week of posts, queue reshuffle, reply sprint, lead hunt, audience export, warm outreach and the rest). Each entry gives the CLI chain in order, the equivalent MCP tool chain, and where the chain STOPS: the four that stop short of a send say so in the entry, because no reply is posted and no DM is delivered from here. `SKILL.md` gains a `## Playbooks` index so an agent can pick a recipe by goal before opening the file

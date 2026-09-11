@@ -271,7 +271,7 @@ yargs(hideBin(process.argv))
           type: "number",
         })
         .option("voice", {
-          describe: "Whose voice to write in",
+          describe: "Whose voice to write in; mine is the voice of the account passed in --account, or your main account if --account is omitted",
           type: "string",
           choices: ["mine", "creator", "hybrid"],
         })
