@@ -61,6 +61,13 @@ import {
   signalsExpandIcp,
 } from "./commands/signals";
 import {
+  workersList,
+  workersSuggestions,
+  workersDraft,
+  workersSchedule,
+  workersDismiss,
+} from "./commands/workers";
+import {
   engageFeeds,
   engagePosts,
   engageFeedsCreate,
@@ -1133,6 +1140,77 @@ yargs(hideBin(process.argv))
     "Delete a signal agent (its saved leads and contact list stay untouched)",
     (y: Argv) => y.positional("id", { describe: "Agent id (from signals:agents)", type: "number" }),
     run(signalsDeleteAgent)
+  )
+  .command(
+    "workers:list",
+    "List your Workers (the agents that write posts for you on a schedule)",
+    (y: Argv) =>
+      accountOption(y)
+        .example("$0 workers:list", "Your Workers, their schedules and next run times")
+        .epilogue(
+          "Workers are created, edited and run in the SuperX app. This reads them so you can tell which Worker a suggestion came from."
+        ),
+    run(workersList)
+  )
+  .command(
+    "workers:suggestions",
+    "List the posts your Workers have written, newest first",
+    (y: Argv) =>
+      paginationOptions(accountOption(y))
+        .option("status", {
+          describe:
+            "to_review (default) = waiting on you; drafted / scheduled = already saved; dismissed = cleared; all = everything",
+          type: "string",
+          choices: ["to_review", "drafted", "scheduled", "dismissed", "all"],
+        })
+        .option("worker", { describe: "Narrow to one Worker by its numeric id (from workers:list)", type: "number" })
+        .example("$0 workers:suggestions --limit 10", "Ten newest posts waiting for review")
+        .example("$0 workers:suggestions --worker 3 --status all", "Everything Worker 3 has written")
+        .epilogue(
+          "Reading suggestions costs nothing and changes nothing. Act on one with workers:draft, workers:schedule or workers:dismiss."
+        ),
+    run(workersSuggestions)
+  )
+  .command(
+    "workers:draft <id>",
+    "Save one Worker suggestion as a draft (nothing is posted)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Suggestion id (from workers:suggestions)", type: "number" })
+        .example("$0 workers:draft 4821", "Move it into Drafts, where scheduled:list --status draft finds it")
+        .epilogue(
+          "The draft keeps the Worker's text as written. Edit it with scheduled:update, or rewrite it first with posts:remix and then save your own version."
+        ),
+    run(workersDraft)
+  )
+  .command(
+    "workers:schedule <id>",
+    "Schedule one Worker suggestion to post at a given time",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Suggestion id (from workers:suggestions)", type: "number" })
+        .option("at", {
+          describe: "When to post, UTC ISO-8601 (for example 2026-09-15T14:00:00Z)",
+          type: "string",
+          demandOption: true,
+        })
+        .example("$0 workers:schedule 4821 --at 2026-09-15T14:00:00Z", "Queue it for Tuesday afternoon")
+        .epilogue(
+          "The post does not inherit your Default Post Settings: it carries only what this call passes, which is nothing beyond the time. Add auto retweet, auto plug or auto delete afterwards with scheduled:update, which also retimes it; scheduled:delete cancels it."
+        ),
+    run(workersSchedule)
+  )
+  .command(
+    "workers:dismiss <id>",
+    "Clear one Worker suggestion out of the To review list",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("id", { describe: "Suggestion id (from workers:suggestions)", type: "number" })
+        .example("$0 workers:dismiss 4821", "Skip this one")
+        .epilogue(
+          "Dismissing drops it from the default to_review list. It stays readable with --status dismissed, and nothing already drafted or scheduled is affected."
+        ),
+    run(workersDismiss)
   )
   .command(
     "engage:feeds",

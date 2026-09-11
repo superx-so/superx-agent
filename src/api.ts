@@ -409,6 +409,32 @@ export class SuperXAPI {
     return (await this.request(`/signals/leads/${leadId}/feedback`, { method: "POST", body })).json;
   }
 
+  // --- Workers ---
+
+  async listWorkers(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/workers", { query })).json;
+  }
+
+  /** The posts your Workers have written, newest first. */
+  async listWorkerSuggestions(query: RequestOptions["query"] = {}): Promise<any> {
+    return (await this.request("/workers/suggestions", { query })).json;
+  }
+
+  /** Save one suggestion as a draft. Nothing is posted. */
+  async draftWorkerSuggestion(id: number, body: unknown): Promise<any> {
+    return (await this.request(`/workers/suggestions/${id}/draft`, { method: "POST", body })).json;
+  }
+
+  /** Save one suggestion as a scheduled post. */
+  async scheduleWorkerSuggestion(id: number, body: unknown): Promise<any> {
+    return (await this.request(`/workers/suggestions/${id}/schedule`, { method: "POST", body })).json;
+  }
+
+  /** Clear one suggestion out of the To review list. */
+  async dismissWorkerSuggestion(id: number, body: unknown): Promise<any> {
+    return (await this.request(`/workers/suggestions/${id}/dismiss`, { method: "POST", body })).json;
+  }
+
   // --- Engage ---
 
   async listEngageFeeds(query: RequestOptions["query"] = {}): Promise<any> {

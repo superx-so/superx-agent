@@ -30,7 +30,7 @@ official website: https://superx.so
 
 **Rule 1: Run `superx status` before anything else.** Every other command fails without valid credentials. If the `superx` binary is missing, install it with `npm install -g superx-cli`. If not authenticated, either run `superx login` (interactive) or set `export SUPERX_API_KEY=sxk_...` (CI and non-interactive sessions). Keys are created at https://app.superx.so/account?tab=api.
 
-**Rule 2: Read PLAYBOOK.md before creating any content.** This repo ships a growth strategy guide (`PLAYBOOK.md`, also inside the installed npm package). It tells you WHAT to post, WHEN, and WHY: the action hierarchy, out-of-network discovery, the engagement loop, and the failure modes that kill reach. The CLI gives you data and actions; the playbook gives you judgment. Do not schedule content without it. For a goal-shaped task ("give me my weekly recap", "DM the people who replied to this post"), read `PLAYBOOKS.md` too: it holds the 28 named recipes with their exact command chains, MCP tool names and stopping points.
+**Rule 2: Read PLAYBOOK.md before creating any content.** This repo ships a growth strategy guide (`PLAYBOOK.md`, also inside the installed npm package). It tells you WHAT to post, WHEN, and WHY: the action hierarchy, out-of-network discovery, the engagement loop, and the failure modes that kill reach. The CLI gives you data and actions; the playbook gives you judgment. Do not schedule content without it. For a goal-shaped task ("give me my weekly recap", "DM the people who replied to this post"), read `PLAYBOOKS.md` too: it holds the 29 named recipes with their exact command chains, MCP tool names and stopping points.
 
 **Rule 3: Know the write constraints.** `scheduled:create` without `--at` creates a DRAFT (nothing publishes). With `--at` it schedules for that time. `scheduled:update` changes only the flags you pass, and a new `--at` alone never schedules a draft; add `--status scheduled` to promote. Writes work on your main account or any linked account (pass the same `--account` you used to read it); accounts shared with you by other people are read-only, and tags are workspace-wide. Images attach via `media:upload` then `--media` (JPG/PNG/WEBP up to 5MB, GIF up to 15MB; max 4 images or 1 GIF per post); video is not supported. Timestamps MUST be UTC ISO-8601 with an explicit `Z` or offset; naive timestamps are rejected with 400. `posts:publish` and `articles:publish` post to X IMMEDIATELY and irreversibly; treat them like hitting Publish in public and get human confirmation of the exact text unless the user already gave it. `posts:publish` also requires `--idempotency-key`, which you reuse verbatim on any retry. `posts:draft` writes post text in the user's voice and saves NOTHING: show the drafts, let the user pick and edit one, then pass the final text to `scheduled:create` yourself; it costs AI credits per draft, so ask for the count the user actually wants. `--voice mine` is the voice of the `--account` you pass (its own posts and style guide); shared accounts are refused.
 
@@ -423,6 +423,29 @@ superx tools:predict --a "$(cat v1.txt)" --b "$(cat v2.txt)"
 - `tools:rephrase` presets: improve, grammar, translate, hook, details, clarity, engaging, humorous, positive, creative, sarcastic, inspirational, concise. The style ones write in the user's voice; grammar, translate, clarity, details and concise stay mechanical.
 - `tools:factcheck` reports `result` (true, false or unknown), a one-sentence `comment` and the `sources` it read. It is a model's reading of a couple of search results, NOT a guarantee: show the sources and never present the verdict as settled. `tools:predict` scores are an opinion for comparing two drafts against each other, not a prediction of reach.
 - Costs are measured AI credits: typically 1 each, and 2 for a remix or a reply draft. None of them spends a live X request except `engage:reply-draft --post`.
+
+### Workers (posts written for you on a schedule)
+
+```bash
+superx workers:list                                  # your Workers, schedules, next run times
+superx workers:suggestions --limit 10                # newest posts waiting for review
+superx workers:suggestions --worker 3 --status all   # everything one Worker has written
+superx workers:suggestions --status scheduled        # the ones already queued
+
+# Act on one (suggestion id from workers:suggestions; write scope)
+superx workers:draft 4821                            # save it to Drafts
+superx workers:schedule 4821 --at "2026-09-15T14:00:00Z"
+superx workers:dismiss 4821                          # clear it out of To review
+```
+
+- A Worker is an agent inside SuperX that writes posts for one account on a schedule. Workers are CREATED, EDITED AND RUN IN THE APP: there is no create or run command here, and no API endpoint for either. This chain reads what they wrote and acts on it.
+- `workers:suggestions` defaults to `--status to_review`, the ones waiting on a person. The other values are `drafted`, `scheduled`, `dismissed` and `all`. `--worker <id>` narrows to one Worker, `--limit` (max 100, default 20) and `--page` walk the list, newest first.
+- Each suggestion carries `id`, `worker_id`, `text`, `status`, `generated_at`, the `drafted_at`/`scheduled_at`/`dismissed_at` stamps, `post_id` once it has been saved, and `reference` (the kind of source the Worker wrote from). The Worker's own collection ids stay private.
+- AI OUTPUT NEEDS A HUMAN: show the user the text and let them edit it before it is saved or queued. `workers:draft` saves it as written, `workers:schedule` queues it as written, and neither asks for confirmation. To change the wording first, rewrite it with `posts:remix` or `tools:rephrase` and save your version with `scheduled:create` instead, then `workers:dismiss` the original so the list stays clean.
+- `workers:schedule` requires `--at` in UTC ISO-8601. The post does NOT inherit the account's Default Post Settings: it carries only what the call passes, which from the CLI is nothing beyond the time, so no auto retweet, auto plug, auto delete or auto DM. Add those afterwards with `scheduled:update`, which is also how you retime it; `scheduled:delete` cancels it.
+- One suggestion can only be saved once. A second `workers:draft` or `workers:schedule` on the same id is a 400, as is acting on a dismissed one. An id belonging to another account's Worker is a 404.
+- `workers:draft` and `workers:schedule` land the post in the same Drafts and Queue the rest of the CLI reads: `scheduled:list --status draft` shows a drafted suggestion, newest first, and the response gives you its `post_id` directly.
+- Endpoints behind these commands: `GET /v1/workers`, `GET /v1/workers/suggestions`, `POST /v1/workers/suggestions/{id}/draft`, `POST /v1/workers/suggestions/{id}/schedule`, `POST /v1/workers/suggestions/{id}/dismiss`. The three POSTs need a key with the **write** scope. Every command here takes `--account` for an account you own (main or linked); an account someone shared with you is read-only, so a write against it returns 403 `writes_main_account_only`.
 
 ### Scheduling
 
