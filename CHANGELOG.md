@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-09-13)
 
+- Workers: `workers:list` shows the account's Workers (the agents inside SuperX that write posts for one account on a schedule) with their schedules and next run times, and `workers:suggestions` lists what they wrote, newest first (`--status to_review|drafted|scheduled|dismissed|all`, default `to_review`; `--worker <id>`, `--limit` up to 100, `--page`). `workers:draft <id>` saves one suggestion to Drafts as written, `workers:schedule <id> --at <UTC ISO-8601>` queues it as written (no Default Post Settings inherited: add auto retweet, plug, delete or DM afterwards with `scheduled:update`), and `workers:dismiss <id>` clears it out of To review. Workers are created, edited and run in the app; there is no create or run command. A suggestion can only be saved once (second save = 400, another account's Worker = 404). Costs no AI credits. `PLAYBOOKS.md` gains recipe 29, Worker output review
+- Drafts: `scheduled:list --status draft` now lists drafts newest first (the API previously returned the oldest drafts) and accepts `--page`
 - Docs and help text only: `posts:draft --voice mine` writes in the voice of the account you pass in `--account` (your main account when omitted, using that account's own posts and style guide), and `posts:draft` returns 403 `writes_main_account_only` on an account shared with you, unlike the other writing helpers
 
 ## 0.4.0 (2026-09-11)
