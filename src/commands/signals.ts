@@ -40,6 +40,7 @@ export async function signalsSearch(argv: {
   icp: string;
   precision?: string;
   max?: number;
+  "max-age-days"?: number;
   account?: string;
 }): Promise<void> {
   const body: Record<string, unknown> = {
@@ -48,6 +49,9 @@ export async function signalsSearch(argv: {
   };
   if (argv.precision) body.precision = argv.precision;
   if (argv.max !== undefined) body.max_leads = argv.max;
+  if (argv["max-age-days"] !== undefined) {
+    body.max_post_age_days = argv["max-age-days"];
+  }
   if (argv.account) body.account_id = argv.account;
 
   const api = new SuperXAPI(getConfig());

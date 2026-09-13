@@ -351,10 +351,10 @@ A live search of X right now for people matching the audience described, scored,
 
 ```bash
 superx signals:suggest-keywords --icp "<who you want to reach>"
-superx signals:search --keywords "<phrase>,<phrase>" --icp "<who you want to reach>" --max 30
+superx signals:search --keywords "<phrase>,<phrase>" --icp "<who you want to reach>" --max 30 --max-age-days 7
 ```
 
-The search creates no agent and stores no leads, so keep what the person needs from that one response.
+The search creates no agent and stores no leads, so keep what the person needs from that one response. `--max-age-days` is the recency window (1-90, default 30): 7 for a pain point worth catching while it is fresh.
 
 MCP: `suggest_keywords` -> `search_leads`
 

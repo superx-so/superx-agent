@@ -940,6 +940,11 @@ yargs(hideBin(process.argv))
           choices: ["high", "discovery"],
         })
         .option("max", { describe: "Leads to return at most (1-30, default 10)", type: "number" })
+        .option("max-age-days", {
+          describe:
+            "Only posts from the last N days count (1-90, default 30). Use 7 to catch a fresh pain point",
+          type: "number",
+        })
         .example(
           "$0 signals:search --keywords 'losing customers to churn' --icp 'B2B SaaS founders worried about retention'",
           "Find people posting about churn right now"
