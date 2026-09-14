@@ -925,7 +925,8 @@ yargs(hideBin(process.argv))
     (y: Argv) =>
       accountOption(y)
         .option("keywords", {
-          describe: "Plain-language phrases these people would post, comma-separated for alternatives. No search operators",
+          describe:
+            "2-5 seed angles of how the BUYER talks, 2-3 words each, comma-separated: workflows, tools they already pay for, jargon, a symptom. Not the product's name, no search operators",
           type: "string",
           demandOption: true,
         })
@@ -933,6 +934,11 @@ yargs(hideBin(process.argv))
           describe: "Who counts as a good lead, in 1-2 sentences: role, domain, and the intent that qualifies them",
           type: "string",
           demandOption: true,
+        })
+        .option("offer", {
+          describe:
+            "What you are selling, one sentence (3-300 chars). The search plans its queries from this",
+          type: "string",
         })
         .option("precision", {
           describe: "high = only confident matches; discovery (default) = broader adjacent matches",
@@ -946,7 +952,7 @@ yargs(hideBin(process.argv))
           type: "number",
         })
         .example(
-          "$0 signals:search --keywords 'losing customers to churn' --icp 'B2B SaaS founders worried about retention'",
+          "$0 signals:search --offer 'ChurnRadar, retention analytics for B2B SaaS' --keywords 'cancelled today, mrr dropped, renewal call' --icp 'B2B SaaS founders worried about retention'",
           "Find people posting about churn right now"
         )
         .epilogue(

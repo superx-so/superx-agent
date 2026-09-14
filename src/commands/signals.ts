@@ -38,6 +38,7 @@ export async function signalsLeads(argv: {
 export async function signalsSearch(argv: {
   keywords: string;
   icp: string;
+  offer?: string;
   precision?: string;
   max?: number;
   "max-age-days"?: number;
@@ -47,6 +48,7 @@ export async function signalsSearch(argv: {
     keywords: argv.keywords,
     icp_description: argv.icp,
   };
+  if (argv.offer) body.offer = argv.offer;
   if (argv.precision) body.precision = argv.precision;
   if (argv.max !== undefined) body.max_leads = argv.max;
   if (argv["max-age-days"] !== undefined) {
