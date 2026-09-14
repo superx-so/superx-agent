@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 (2026-09-14)
+
+- Lead search recency: `signals:search --max-age-days <n>` only counts posts from the last N days (1-90, default 30), so every lead comes from something written recently rather than a lifetime match. Older matches are skipped and counted in `freshness.stale_skipped`, each lead's `provenance.posted_at` / `provenance.post_age_days` says when the matched post was written, and leads come back freshest first within each score. Use `--max-age-days 7` to catch a pain point while it is fresh; an empty result with `stale_skipped` above 0 means people do post about this, just not lately. `SKILL.md` and `PLAYBOOKS.md` (lead hunt recipe) carry the flag
+
 ## 0.5.0 (2026-09-13)
 
 - Workers: `workers:list` shows the account's Workers (the agents inside SuperX that write posts for one account on a schedule) with their schedules and next run times, and `workers:suggestions` lists what they wrote, newest first (`--status to_review|drafted|scheduled|dismissed|all`, default `to_review`; `--worker <id>`, `--limit` up to 100, `--page`). `workers:draft <id>` saves one suggestion to Drafts as written, `workers:schedule <id> --at <UTC ISO-8601>` queues it as written (no Default Post Settings inherited: add auto retweet, plug, delete or DM afterwards with `scheduled:update`), and `workers:dismiss <id>` clears it out of To review. Workers are created, edited and run in the app; there is no create or run command. A suggestion can only be saved once (second save = 400, another account's Worker = 404). Costs no AI credits. `PLAYBOOKS.md` gains recipe 29, Worker output review
