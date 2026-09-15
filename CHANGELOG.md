@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2 (2026-09-16)
+
+- Lead search offer: `signals:search --offer "<one sentence on what you sell>"` (3-300 chars) tells the search what is being sold, and it plans up to 10 buyer-side query angles from that (workflows, pain, competitors, brand, adjacent) instead of running your keywords verbatim. `--keywords` are now 2-5 short seed angles of how the BUYER talks (a symptom, a tool they already pay for, their jargon), not the product's name and no search operators. Adding `--offer` is the single biggest lever on lead quality; `SKILL.md` carries the updated recipe
+
 ## 0.5.1 (2026-09-14)
 
 - Lead search recency: `signals:search --max-age-days <n>` only counts posts from the last N days (1-90, default 30), so every lead comes from something written recently rather than a lifetime match. Older matches are skipped and counted in `freshness.stale_skipped`, each lead's `provenance.posted_at` / `provenance.post_age_days` says when the matched post was written, and leads come back freshest first within each score. Use `--max-age-days 7` to catch a pain point while it is fresh; an empty result with `stale_skipped` above 0 means people do post about this, just not lately. `SKILL.md` and `PLAYBOOKS.md` (lead hunt recipe) carry the flag
