@@ -242,8 +242,9 @@ export class SuperXAPI {
     return (await this.request("/tools/factcheck", { method: "POST", body })).json;
   }
 
-  async predictAlgorithm(body: unknown): Promise<any> {
-    return (await this.request("/tools/algorithm-predict", { method: "POST", body })).json;
+  /** Score ONE draft against the account's own normal post. */
+  async viralScore(body: unknown): Promise<any> {
+    return (await this.request("/posts/viral-score", { method: "POST", body })).json;
   }
 
   /** Draft ONE reply to a post. Text only: a person posts it. */

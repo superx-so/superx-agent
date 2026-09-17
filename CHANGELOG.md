@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0 (2026-09-18)
+
+- Viral Score: `posts:viral-score --text "..."` scores ONE draft from 0 to 100 against the account's OWN recent posts, with what helped and what hurt in plain English and an expected multiple on likes, replies, reposts+quotes and views versus that account's own median post. `--image`, `--video`, `--quote` and `--post-at` describe how the post would go out, and `--population` scores against the average training post instead (an account with fewer than 10 recent originals falls back to that on its own). Reposts+quotes and views carry `confidence: "low"`. It compares a draft with the account's normal post: it is not a reach prediction and it knows nothing about follower count. `warnings` name what the score never rewards (asking for replies, inviting people to connect, a borrowed template, sending readers off the platform), so a warning means rewrite rather than work around it. Cheap on purpose so drafts can be iterated: most calls charge no credits, one in ten charges 1, and the first call for an account charges 1 more while its baseline is built. `SKILL.md` carries the iterate-until-it-stops-rising recipe
+- Removed: `tools:predict`. It compared two drafts on a model's opinion and was never measured against real posts; `posts:viral-score` replaces it with a score fit on real same-author outcomes
+
 ## 0.5.2 (2026-09-16)
 
 - Lead search offer: `signals:search --offer "<one sentence on what you sell>"` (3-300 chars) tells the search what is being sold, and it plans up to 10 buyer-side query angles from that (workflows, pain, competitors, brand, adjacent) instead of running your keywords verbatim. `--keywords` are now 2-5 short seed angles of how the BUYER talks (a symptom, a tool they already pay for, their jargon), not the product's name and no search operators. Adding `--offer` is the single biggest lever on lead quality; `SKILL.md` carries the updated recipe

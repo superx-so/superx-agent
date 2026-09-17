@@ -413,9 +413,12 @@ superx tools:inline-edit --text "..." --instruction "make this one line, lowerca
 # One preset rewrite of a whole post
 superx tools:rephrase --type concise --text "$(cat post.txt)"
 
-# Check a claim, and compare two drafts
+# Check a claim
 superx tools:factcheck --text "X has 600M daily active users"
-superx tools:predict --a "$(cat v1.txt)" --b "$(cat v2.txt)"
+
+# Score a draft against this account's own normal post, then improve it
+superx posts:viral-score --text "$(cat draft.txt)"
+superx posts:viral-score --text "$(cat draft-v2.txt)" --image
 ```
 
 - **Every one of these returns TEXT and posts NOTHING.** `engage:reply-draft` writes a reply for a person to review and post; there is still no reply-sending command anywhere in the CLI. Show the draft, let the user edit it, and never say a reply went out.
@@ -423,7 +426,8 @@ superx tools:predict --a "$(cat v1.txt)" --b "$(cat v2.txt)"
 - `posts:remix` needs `--closeness` 0-100: 0 keeps only the idea, 100 stays very close to the original wording. Use it on a proven post the user wants to say again in their own words, then save the result with `posts:draft` or `scheduled:create`.
 - `tools:inline-edit` needs `--instruction`, `--type`, or both, and works best with `--full` so the edit blends into the post around it. `--type` presets: grammar, translate, hook, details, concise, engaging, humorous, creative, sarcastic, inspirational.
 - `tools:rephrase` presets: improve, grammar, translate, hook, details, clarity, engaging, humorous, positive, creative, sarcastic, inspirational, concise. The style ones write in the user's voice; grammar, translate, clarity, details and concise stay mechanical.
-- `tools:factcheck` reports `result` (true, false or unknown), a one-sentence `comment` and the `sources` it read. It is a model's reading of a couple of search results, NOT a guarantee: show the sources and never present the verdict as settled. `tools:predict` scores are an opinion for comparing two drafts against each other, not a prediction of reach.
+- `tools:factcheck` reports `result` (true, false or unknown), a one-sentence `comment` and the `sources` it read. It is a model's reading of a couple of search results, NOT a guarantee: show the sources and never present the verdict as settled.
+- `posts:viral-score` scores ONE draft from 0 to 100 against the account's OWN recent posts, with `helped` / `hurt` in plain English and an expected multiple per counter (`reposts_and_quotes` and `views` come back `confidence: "low"`, so say so). It is not a reach prediction and it knows nothing about follower count. Rewrite what `hurt` names, score again, and stop when the score stops rising: three or four rounds is the useful range. NEVER chase the score with reply bait - anything in `warnings` (asking for replies, inviting people to connect, a borrowed template, sending readers off the platform) can only push a score DOWN, so a warning means change the post, not work around it. The baseline is the account's originals from the past 90 days, minus the last 3 days whose numbers are still settling; `baseline.kind: "population"` means fewer than 10 of those were usable and the draft was scored against the average training post instead.
 - Costs are measured AI credits: typically 1 each, and 2 for a remix or a reply draft. None of them spends a live X request except `engage:reply-draft --post`.
 
 ### Workers (posts written for you on a schedule)
@@ -883,7 +887,7 @@ Full recipes with flags and MCP tool chains: [PLAYBOOKS.md](./PLAYBOOKS.md). Pic
 49. **Nothing in the outreach chain sends a DM.** `datasets:outreach-drafts` writes message TEXT onto a research dataset and stops there; a person reviews and sends them from the SuperX app. Never say messages were sent and never offer to send them. If the user explicitly asks, you may QUEUE them with `dm:campaign` (one recipient entry per person, each with its own `message`), which is still an enqueue: the app sends. Ask the user for the `--format`; never invent one. Re-running overwrites every draft, `generic` counts messages written with no personal claims (that brief had no usable hook), and `contaminated` counts drafts discarded for naming a different recipient - run it again to retry those rows.
 50. **`signals:search` saves nothing and `datasets:research` charges per profile.** A search creates no agent and no stored leads, so keep what the user needs from that response; use `signals:create-agent` when they want leads to keep arriving. Research is a flat 1 credit per profile ACTUALLY researched (handles that cannot be resolved, and people with no recent posts, come back in `skipped` and are refunded), and over 5 profiles it runs in the background: never state a brief count from a `collecting` result. `datasets:refine` also creates a dataset, so it spends one of the same 10 collections a day.
 51. **`ai_action_limited` has two scopes.** Read `error.scope` before telling the user anything: `"account"` is their plan's own daily cap for that action, `"platform"` is a fair-use ceiling on live-data actions shared by every SuperX account. On `"platform"` their own allowance is untouched, so wait for `reset_at` and retry rather than reporting them as out of quota.
-52. **The writing helpers draft, they never publish.** `engage:reply-draft`, `posts:remix`, `tools:inline-edit`, `tools:rephrase`, `tools:factcheck` and `tools:predict` all return TEXT and stop there - nothing is posted, scheduled or sent. Unlike `posts:draft`, they also accept an account shared with you. Show the output, let the user edit it, and use `posts:draft`, `scheduled:create` or `posts:publish` when they say so. A `tools:factcheck` verdict is a model reading two search results: report it with its sources, never as settled fact.
+52. **The writing helpers draft, they never publish.** `engage:reply-draft`, `posts:remix`, `tools:inline-edit`, `tools:rephrase`, `tools:factcheck` and `posts:viral-score` all return TEXT or a score and stop there - nothing is posted, scheduled or sent. Unlike `posts:draft`, they also accept an account shared with you. Show the output, let the user edit it, and use `posts:draft`, `scheduled:create` or `posts:publish` when they say so. A `tools:factcheck` verdict is a model reading two search results: report it with its sources, never as settled fact.
 53. **The free helpers cost nothing but are not unlimited.** `context:regenerate-style-guide` is once an hour per account and does not override a manual style-guide setting; `context:scrape-product` and `signals:expand-icp --url` share 20 page reads a day with the SuperX app, and `--url` also inherits the app's limit of 10 prefills per 10 minutes (that one comes back as `rate_limited` and clears in about a minute, so retry rather than reporting a daily budget); `signals:suggest-keywords` and `signals:expand-icp --text` have no ceiling of their own, so do not loop them - each one is a model call. All five send `X-Credits-Remaining` but no `X-Credits-Charged`, because nothing was charged. All four commands still need a key with the write scope: they are POSTs, and every non-GET API route needs it.
 54. **A DM campaign is an ENQUEUE, not a send.** `dm:campaign` returns counts of what was QUEUED; the SuperX app's scheduler sends them later, within the account's daily and monthly DM limits, so never report messages as delivered from that response - `dm:campaign-status` and `dm:queue` show what actually went out. Confirm the recipient list and the exact text with the user first: they are responsible for these messages under X's automation rules. Cancel the unsent ones with `dm:cancel`; anything already sent cannot be recalled.
 
@@ -994,7 +998,7 @@ superx posts:remix --text "..." --closeness 70
 superx tools:inline-edit --text "..." --full "..." --type hook
 superx tools:rephrase --type concise --text "..."
 superx tools:factcheck --text "..."
-superx tools:predict --a "..." --b "..."
+superx posts:viral-score --text "..."
 
 # DM campaigns (queued only; the SuperX app sends them)
 superx dm:limits

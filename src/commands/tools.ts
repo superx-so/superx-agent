@@ -49,15 +49,3 @@ export async function toolsFactcheck(argv: {
   const api = new SuperXAPI(getConfig());
   printJson(await api.factCheck(body));
 }
-
-export async function toolsPredict(argv: {
-  a: string;
-  b: string;
-  account?: string;
-}): Promise<void> {
-  const body: Record<string, unknown> = { version_a: argv.a, version_b: argv.b };
-  if (argv.account) body.account_id = argv.account;
-
-  const api = new SuperXAPI(getConfig());
-  printJson(await api.predictAlgorithm(body));
-}

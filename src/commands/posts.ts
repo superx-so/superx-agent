@@ -119,3 +119,28 @@ export async function postsRemix(argv: {
   const api = new SuperXAPI(getConfig());
   printJson(await api.remixPost(body));
 }
+
+/**
+ * Score ONE draft against the account's own recent posts. Returns a 0-100
+ * score with what helped and what hurt; nothing is posted or scheduled.
+ */
+export async function postsViralScore(argv: {
+  text: string;
+  image?: boolean;
+  video?: boolean;
+  quote?: boolean;
+  postAt?: string;
+  population?: boolean;
+  account?: string;
+}): Promise<void> {
+  const body: Record<string, unknown> = { text: argv.text };
+  if (argv.image) body.has_image = true;
+  if (argv.video) body.has_video = true;
+  if (argv.quote) body.is_quote = true;
+  if (argv.postAt) body.post_at = argv.postAt;
+  if (argv.population) body.baseline = "population";
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.viralScore(body));
+}

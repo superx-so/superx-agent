@@ -4,12 +4,11 @@ import type { Argv } from "yargs";
 import { ApiError, note } from "./api";
 import { login, logout, status } from "./commands/auth";
 import { me, accounts } from "./commands/accounts";
-import { postsList, postsAnalytics, postsDraft, postsRemix, repliesList, repliesReceived } from "./commands/posts";
+import { postsList, postsAnalytics, postsDraft, postsRemix, postsViralScore, repliesList, repliesReceived } from "./commands/posts";
 import {
   toolsInlineEdit,
   toolsRephrase,
   toolsFactcheck,
-  toolsPredict,
 } from "./commands/tools";
 import { inspirationSearch, inspirationMedia } from "./commands/inspiration";
 import { xPost, xReplies, xUser, xUserPosts } from "./commands/x";
@@ -407,17 +406,25 @@ yargs(hideBin(process.argv))
     run(toolsFactcheck)
   )
   .command(
-    "tools:predict",
-    "Score two versions of a post against what the timeline rewards (costs AI credits)",
+    "posts:viral-score",
+    "Score one draft against this account's own normal post, with what helped and what hurt",
     (y: Argv) =>
       accountOption(y)
-        .option("a", { describe: "The first version (required)", type: "string", demandOption: true })
-        .option("b", { describe: "The second version (required)", type: "string", demandOption: true })
-        .example('$0 tools:predict --a "$(cat v1.txt)" --b "$(cat v2.txt)"', "Compare two drafts")
+        .option("text", { describe: "The draft to score (required, max 4000 chars)", type: "string", demandOption: true })
+        .option("image", { describe: "An image would be attached", type: "boolean" })
+        .option("video", { describe: "A video would be attached", type: "boolean" })
+        .option("quote", { describe: "The post quotes another post", type: "boolean" })
+        .option("post-at", { describe: "When it would go out (UTC ISO-8601)", type: "string" })
+        .option("population", {
+          describe: "Score against the average training post instead of this account's own posts",
+          type: "boolean",
+        })
+        .example('$0 posts:viral-score --text "$(cat draft.txt)"', "Score a draft before you send it")
+        .example('$0 posts:viral-score --text "..." --image', "Score it as a post with an image")
         .epilogue(
-          "The scores are a model's opinion, useful for comparing two drafts against each other, not a prediction of real reach."
+          "The score compares this draft with the account's OWN recent posts. It is not a reach prediction and it knows nothing about follower count. Rewrite and score again until the score stops rising, and read any warnings as a stop sign: asking for replies or sending readers off the platform can never raise it."
         ),
-    run(toolsPredict)
+    run(postsViralScore)
   )
   .command(
     "replies:list",
