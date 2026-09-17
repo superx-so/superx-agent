@@ -1,0 +1,22 @@
+{
+  "name": "Viral Score Loop",
+  "category": "content-posting",
+  "order": 90,
+  "subtitle": "Score a draft against your own posts, then sharpen it until the score stops rising.",
+  "summary": "Scores your draft from 0 to 100 against your own recent posts and says what helped and what hurt. Then it rewrites one thing at a time, keyed on the biggest thing that hurt, and rescores, keeping your facts and voice. It stops when the score stops rising, after six versions, or the moment a warning fires: asking for replies, follows or links never raises the score.",
+  "howToAsk": [
+    "How will this post do? [paste draft]",
+    "Score this draft and make it better",
+    "Sharpen this before I post it"
+  ],
+  "provide": "the draft, and whether it will carry an image or a video.",
+  "get": "a score for every version with what changed, and the best version on a picker card.",
+  "chips": [
+    "No extra cost",
+    "Scored against your own recent posts",
+    "Up to six versions",
+    "Nothing is posted"
+  ],
+  "launchPrompt": "Score this draft against my own recent posts and tell me what helped and what hurt. Then rewrite it one change at a time, keyed on the biggest thing that hurt, and rescore, keeping my facts and my voice. Never add asks for replies, follows or links to push the score up, and stop if a warning fires. Show me every version with its score and end with the best one. Here is the draft: ",
+  "sampleKind": "drafts"
+}

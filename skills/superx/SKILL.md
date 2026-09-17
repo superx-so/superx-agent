@@ -185,6 +185,7 @@ scoping are in [references/skills/README.md](./references/skills/README.md).
 - **Repurpose a Winner**: Your best post, reworked into fresh angles. -> references/skills/repurpose-a-winner/recipe.md
 - **Queue Reshuffle**: Move and rewrite scheduled posts by just asking. -> references/skills/queue-reshuffle/recipe.md
 - **Worker Output Review**: Triage the posts your Workers wrote while you were away. -> references/skills/worker-output-review/recipe.md
+- **Viral Score Loop**: Score a draft against your own posts, then sharpen it until the score stops rising. -> references/skills/viral-score-iterate/recipe.md
 
 ### Replies & Engagement
 - **Reply Sprint**: The replies your posts got, each with a ready-to-send draft. -> references/skills/reply-sprint/recipe.md
