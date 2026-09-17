@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "meta": {
+    "subtitle": "Prebuilt Twitter growth workflows powered by your SuperX data.",
+    "recommendPrompt": "Look at my account and recent activity and recommend which skills would help me most right now."
+  },
+  "categories": [
+    {
+      "id": "grow-plan",
+      "name": "Grow & Plan"
+    },
+    {
+      "id": "content-posting",
+      "name": "Content & Posting"
+    },
+    {
+      "id": "replies-engagement",
+      "name": "Replies & Engagement"
+    },
+    {
+      "id": "leads-prospecting",
+      "name": "Leads & Prospecting"
+    },
+    {
+      "id": "outreach-dms",
+      "name": "Outreach & DMs"
+    },
+    {
+      "id": "audience-data",
+      "name": "Audience & Data"
+    },
+    {
+      "id": "analytics-insights",
+      "name": "Analytics & Insights"
+    },
+    {
+      "id": "setup-voice",
+      "name": "Rules & Setup"
+    }
+  ]
+}

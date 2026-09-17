@@ -1,4 +1,4 @@
-# SuperX Growth Playbook
+# SuperX Growth Strategy
 
 Strategy reference for agents creating Twitter/X content with the `superx` CLI. Read this before drafting or scheduling anything. Each section notes which commands supply the data.
 
@@ -65,7 +65,7 @@ A sustainable weekly loop an agent can run:
 2. Pull last week's winners (`posts:list --sort likes --since ...`) and note why each worked.
 3. Plan roughly 7 posts for the week; draft them (`scheduled:create` without `--at`, with a `--title` naming the angle and a `--tag` for the week's cluster so the human can scan the batch), review, then promote the best 3 to peak times (`scheduled:update <id> --at ... --status scheduled`).
 4. Include one format experiment per week (a thread via `--part`, a longer post, or a long-form X Article via `articles:create` when a topic deserves depth: draft it, add a cover with `articles:cover`, and let the human review before `articles:publish`) so format reach is never left untested.
-   For the week's strongest post, consider the advanced settings: `--auto-retweet 6` gives it a second push into a different timezone window, and `--auto-plug <template-id> --auto-plug-threshold 50` (ids from `plug-templates:list`) turns a winner into a lead-in for the account's offer. Posts inherit the account's Default Post Settings automatically when the flags are omitted; use `--no-auto-retweet`/`--no-auto-plug` on posts where the defaults do not fit (see SKILL.md for the full flag set).
+   For the week's strongest post, consider the advanced settings: `--auto-retweet 6` gives it a second push into a different timezone window, and `--auto-plug <template-id> --auto-plug-threshold 50` (ids from `plug-templates:list`) turns a winner into a lead-in for the account's offer. Posts inherit the account's Default Post Settings automatically when the flags are omitted; use `--no-auto-retweet`/`--no-auto-plug` on posts where the defaults do not fit (see `../SKILL.md` for the full flag set).
 5. Refresh the 3-3-3 circle (`contacts:list`) and do the daily reply blocks.
 6. End of week: `posts:analytics` for the trend, top 3 posts by meaningful actions, one failure mode to fix with a rule (for example "no link-drop posts", "never ghost early replies").
 7. Repurpose one winner into two new assets for next week (tighter version, thread expansion, follow-up take).
@@ -86,5 +86,5 @@ Verify state with `superx scheduled:list --status draft,scheduled` after every p
 
 - Drafts first when confidence is low; a human (or a later `scheduled:update --status scheduled`) can promote a draft after review. Use `--scratchpad` to leave the reasoning behind a draft where the human will see it.
 - Never fabricate metrics, quotes, or claims in content. Use real data from the CLI or say nothing.
-- Respect the write constraints: writes work on your main account or any linked account (pass the same `--account` you used to read it), accounts other people shared with you are read-only, images only via `media:upload` (no video), UTC timestamps with explicit offset (see SKILL.md Rule 3).
+- Respect the write constraints: writes work on your main account or any linked account (pass the same `--account` you used to read it), accounts other people shared with you are read-only, images only via `media:upload` (no video), UTC timestamps with explicit offset (see `../SKILL.md` Rule 3).
 - Quality over volume, always. One post a stranger would reply to beats five posts nobody finishes reading.

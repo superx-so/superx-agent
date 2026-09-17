@@ -1,0 +1,20 @@
+{
+  "name": "Who Is This Person?",
+  "category": "replies-engagement",
+  "order": 40,
+  "subtitle": "A fast read on any public account, plus your history with them.",
+  "summary": "Looks up any public @handle live (bio, size, what they post) and combines it with your history together (their replies to you and how often they have replied) so you know who you're talking to before you answer.",
+  "howToAsk": [
+    "Who is @handle?",
+    "What's my history with @handle?"
+  ],
+  "provide": "the @handle.",
+  "get": "profile summary, up to 20 recent posts, and your shared history.",
+  "chips": [
+    "No extra cost",
+    "Live lookup",
+    "Public accounts only"
+  ],
+  "launchPrompt": "Who is @[handle]? Give me their profile, recent posts, and any history they have with my account.",
+  "sampleKind": "leads"
+}

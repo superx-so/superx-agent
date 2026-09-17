@@ -4,6 +4,10 @@
 npx skills add superx-so/superx-agent
 ```
 
+Already have the CLI? `superx skills:install` puts the same skill in
+`~/.claude/skills/superx` and `~/.agents/skills/superx` (`--target openclaw`,
+`--project`, `--copy`).
+
 # SuperX CLI
 
 **Twitter/X growth CLI for developers and AI agents.** Read your posts and their metrics, pull account analytics, find the people who engage with you most, create draft or scheduled posts and threads (with image attachments), write, schedule, and publish long-form X Articles (with AI cover generation), and read or update the Context settings that steer SuperX's AI writing through the [SuperX API](https://docs.superx.so).
@@ -11,7 +15,7 @@ npx skills add superx-so/superx-agent
 Two things ship in this repo:
 
 - `superx-cli`, an npm package installing the `superx` binary (a thin client for `api.superx.so/v1`)
-- An agent skill (`SKILL.md`) plus a growth strategy guide (`PLAYBOOK.md`) and 29 goal-shaped recipes (`PLAYBOOKS.md`) so agents do not just schedule posts, they follow a strategy that works
+- An agent skill (`skills/superx/SKILL.md`) plus a growth strategy guide (`references/growth-strategy.md`) and a goal-shaped skill for every SuperX workflow (`references/skills/`) so agents do not just schedule posts, they follow a strategy that works
 
 ---
 
@@ -342,9 +346,9 @@ superx docs   # Prints the API quickstart as markdown; works without auth
 
 ## Features for AI agents
 
-- **Skill included**: `npx skills add superx-so/superx-agent` installs [SKILL.md](./SKILL.md), a complete agent reference with hard rules, workflows, and gotchas.
-- **Strategy included**: [PLAYBOOK.md](./PLAYBOOK.md) distills the SuperX growth methodology (action hierarchy, out-of-network discovery, the 3-3-3 engagement loop, weekly operating system) into directives an agent can execute with this CLI. The skill instructs agents to read it before creating content.
-- **Playbooks included**: [PLAYBOOKS.md](./PLAYBOOKS.md) holds 29 goal-shaped recipes, one per SuperX skill, each with its CLI chain, the matching MCP tool chain, and the point where the agent hands the result back to a person.
+- **Skill included**: `npx skills add superx-so/superx-agent`, or `superx skills:install` once the CLI is on the machine, installs [skills/superx](./skills/superx/SKILL.md), a route-first agent reference with the hard rules, the workflow, the gotchas and a [full command reference](./skills/superx/references/commands.md).
+- **Strategy included**: [references/growth-strategy.md](./skills/superx/references/growth-strategy.md) distills the SuperX growth methodology (action hierarchy, out-of-network discovery, the 3-3-3 engagement loop, weekly operating system) into directives an agent can execute with this CLI. The skill instructs agents to read it before creating content.
+- **Skills included**: [references/skills/](./skills/superx/references/skills) holds one folder per SuperX skill, each with its CLI chain, the matching MCP tool chain, and the point where the agent hands the result back to a person.
 - **Clean JSON stdout**: no decoration to strip; every data command is `jq`-safe.
 - **Idempotent writes**: agents can retry `scheduled:create` safely with `--idempotency-key`.
 - **Self-describing**: `superx docs` fetches the current API quickstart at runtime.
@@ -357,7 +361,7 @@ superx accounts
 superx posts:list --sort likes --limit 10          # study what works
 superx posts:analytics                             # check the trend
 superx contacts:list --sort engagement --limit 10  # who to engage today
-# ... read PLAYBOOK.md, draft content ...
+# ... read references/growth-strategy.md, draft content ...
 superx scheduled:create --text "Draft for review"  # draft first
 superx scheduled:list --status draft
 ```

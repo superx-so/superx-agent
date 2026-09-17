@@ -1,0 +1,23 @@
+{
+  "name": "Find Your Story",
+  "category": "grow-plan",
+  "order": 40,
+  "subtitle": "Find the story people follow you for: stakes, struggle, and where it's heading.",
+  "summary": "Reads your bio, pinned post, and top posts, then lays out your story as an arc: where you started, what's at stake, what you're fighting through, and how it stands today. If you have few or no posts, it interviews you one question at a time and builds the arc from your answers. Ends with a pinned-post draft and two posts that continue the story.",
+  "howToAsk": [
+    "What's my story?",
+    "Help me find my story",
+    "I don't think I'm interesting, what should I post about?"
+  ],
+  "provide": "nothing if you have posts; otherwise answers to a few short questions.",
+  "get": "your story arc (setup, stakes, conflict, resolution or where it stands), plus a pinned-post draft and two story posts on a picker card.",
+  "chips": [
+    "No extra cost",
+    "Live profile lookup",
+    "Asks questions if you have few posts",
+    "Scheduling needs your approval"
+  ],
+  "launchPrompt": "Find my story. Read my bio, my pinned post, and my top posts, then lay out my story arc: where I started, what's at stake, what I'm fighting through, and where it stands now. If I have few or no posts, or they don't show it, interview me one question at a time about what I left behind, what I'm chasing, and what could go wrong, then build the arc from my answers. Finish with a pinned-post draft that sets the stakes and two posts that continue the story.",
+  "sampleKind": "recap",
+  "starter": true
+}

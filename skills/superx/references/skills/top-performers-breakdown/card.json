@@ -1,0 +1,21 @@
+{
+  "name": "Top Performers Breakdown",
+  "category": "analytics-insights",
+  "order": 20,
+  "subtitle": "The pattern your best posts share, and the shape to write more of.",
+  "summary": "Ranks your top posts over a window and reads what they have in common (topic, format, hook style), then spells the pattern out as a shape you can write more of. Nothing is applied to your drafts automatically.",
+  "howToAsk": [
+    "What were my best posts this month?",
+    "Find the pattern in my winners."
+  ],
+  "provide": "optionally a window (up to 90 days, otherwise the last 30).",
+  "get": "the ranked winners, the shared pattern, and next-step suggestions.",
+  "chips": [
+    "No extra cost",
+    "Synced numbers lag a few hours"
+  ],
+  "launchPrompt": "Show my top posts from the last 30 days and break down the pattern behind them.",
+  "sampleKind": "recap",
+  "starter": true,
+  "starterGroup": "performance"
+}

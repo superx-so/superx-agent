@@ -1,0 +1,19 @@
+{
+  "name": "Week of Posts",
+  "category": "content-posting",
+  "order": 50,
+  "subtitle": "A week of drafts, spread across the week, one approval each.",
+  "summary": "Drafts a batch of posts for the week from your topics and recent winners, varies the formats, and proposes them in batches, one approval card per post, spread across the week.",
+  "howToAsk": [
+    "Fill my queue for the week",
+    "Draft a week of posts."
+  ],
+  "provide": "optionally themes for the week.",
+  "get": "a week of varied drafts, proposed in batches with one approval per post.",
+  "chips": [
+    "No extra cost",
+    "Each post needs your approval"
+  ],
+  "launchPrompt": "Draft a week of posts from my recent topics and best performers, and propose a schedule spread across the week. If my analytics are still syncing, ask me for themes first.",
+  "sampleKind": "drafts"
+}

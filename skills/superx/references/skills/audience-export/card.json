@@ -1,0 +1,20 @@
+{
+  "name": "Audience Export",
+  "category": "audience-data",
+  "order": 10,
+  "subtitle": "Everyone who engaged a post, as a spreadsheet, no filters.",
+  "summary": "Collects everyone who replied to, quoted, or reposted any public post into a dataset with handle, followers, bio, and whether their DMs are open, then hands you the CSV/XLSX. No filters, the raw full audience. Works on your posts or anyone's. Past 1000 people the scan stops there and says so.",
+  "howToAsk": [
+    "Export everyone who replied to [link]",
+    "Get me the quote tweeters of this post."
+  ],
+  "provide": "the post link and which engagement type.",
+  "get": "a downloadable dataset up to 1000 rows with handle, followers, bio, and DMs open.",
+  "chips": [
+    "Up to 1000 rows",
+    "10 dataset ops per day",
+    "Background for big posts"
+  ],
+  "launchPrompt": "Collect everyone who [replied to / quoted / reposted] this post into a dataset I can download: [paste link]",
+  "sampleKind": "dataset"
+}

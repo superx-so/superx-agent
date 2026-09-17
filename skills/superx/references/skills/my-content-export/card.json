@@ -1,0 +1,21 @@
+{
+  "name": "My Content Export",
+  "category": "audience-data",
+  "order": 30,
+  "subtitle": "Your own posts or replies, as a spreadsheet.",
+  "summary": "Exports your own posts or the replies you've sent as a downloadable spreadsheet. Raw rows for you to slice yourself, with none of the analysis My Replies Report does. Small exports finish immediately.",
+  "howToAsk": [
+    "Export all my replies",
+    "Download my posts from the last month."
+  ],
+  "provide": "posts or replies; optionally a time window.",
+  "get": "a downloadable dataset of your own content.",
+  "chips": [
+    "No extra cost",
+    "10 dataset ops per day",
+    "Small exports are instant"
+  ],
+  "launchPrompt": "Export my posts from the last 30 days as a download I can open in a spreadsheet.",
+  "sampleKind": "dataset",
+  "starter": true
+}

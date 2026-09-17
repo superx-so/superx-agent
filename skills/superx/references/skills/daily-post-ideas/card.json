@@ -1,0 +1,22 @@
+{
+  "name": "Daily Post Ideas",
+  "category": "content-posting",
+  "order": 10,
+  "subtitle": "What to post today, drafted and ready to schedule.",
+  "summary": "Checks what's already in your queue and what has worked for you lately, then drafts 2-3 posts in your voice for you to pick from and schedule.",
+  "howToAsk": [
+    "What should I post today?",
+    "Give me post ideas",
+    "Draft something for today."
+  ],
+  "provide": "optionally a topic or product to focus on.",
+  "get": "2-3 drafts on a picker card, then scheduling from an approval card.",
+  "chips": [
+    "No extra cost",
+    "Scheduling needs your approval"
+  ],
+  "launchPrompt": "What should I post today? Check my queue and recent performance, then draft 2-3 options I can schedule.",
+  "sampleKind": "drafts",
+  "starter": true,
+  "starterGroup": "ideas"
+}

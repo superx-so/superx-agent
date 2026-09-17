@@ -1,0 +1,21 @@
+{
+  "name": "DM-Ready Audience Builder",
+  "category": "outreach-dms",
+  "order": 40,
+  "subtitle": "Build a clean, DM-able audience from any post or public X list.",
+  "summary": "Collects everyone who replied to, quoted, or reposted a post, or the members of a public X list (not likers, not followers), filters to people with open DMs plus any bio keyword or follower filters, and saves the result as a dataset ready for a campaign now or later. You can download it or add people to your contacts, up to 500 per card.",
+  "howToAsk": [
+    "Build a DM-able audience from [link]",
+    "Grab the members of this X list: [link]",
+    "Who from this list has open DMs?"
+  ],
+  "provide": "the post or public X list link, plus any filters.",
+  "get": "a filtered dataset with counts, a download, add-to-contacts up to 500 per card, and a path to a campaign.",
+  "chips": [
+    "Up to 1000 rows",
+    "10 dataset ops per day",
+    "Over 100 people runs in the background"
+  ],
+  "launchPrompt": "Build me a DM-ready audience from this post or public X list: [paste link]. Keep only people with open DMs, and also filter by: [bio keyword, minimum followers, or leave blank for none].",
+  "sampleKind": "dataset"
+}

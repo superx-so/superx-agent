@@ -1,0 +1,21 @@
+{
+  "name": "Queue Reshuffle",
+  "category": "content-posting",
+  "order": 70,
+  "subtitle": "Move and rewrite scheduled posts by just asking.",
+  "summary": "Reads your scheduled queue and moves or rewrites posts conversationally (\"push the 9am to tomorrow\", \"make Thursday's punchier\"). Every change is an approval card; nothing moves without you.",
+  "howToAsk": [
+    "Move my 9am post to tomorrow",
+    "Rewrite Thursday's post."
+  ],
+  "provide": "which post and what to change.",
+  "get": "current vs proposed on a card, one card per change.",
+  "chips": [
+    "No extra cost",
+    "Changes need your approval",
+    "Active account, up to 25 posts",
+    "Can't delete posts"
+  ],
+  "launchPrompt": "Show my scheduled posts and flag any that should move to a better time or need a punchier hook, then propose the changes.",
+  "sampleKind": "drafts"
+}

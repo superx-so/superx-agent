@@ -1,0 +1,21 @@
+{
+  "name": "Reply-to-DM Campaign",
+  "category": "outreach-dms",
+  "order": 30,
+  "subtitle": "DM the people who replied to any of your posts.",
+  "summary": "Collects everyone who replied to your post (optionally only those who said a keyword like \"interested\"), keeps the ones with open DMs, and queues a templated DM campaign you approve on a card with a day-by-day sending plan. Ask for supporters only and it reads what each person wrote and keeps the genuinely supportive replies, which uses one more dataset op and a small AI cost. Past 100 recipients the campaign takes the first 100 in dataset order.",
+  "howToAsk": [
+    "DM everyone who replied [keyword] to my post",
+    "Send my link to everyone who commented.",
+    "DM only the supportive repliers."
+  ],
+  "provide": "the post link, optional keyword, your message ([name] fills in).",
+  "get": "the collected audience, then an approval card with recipients and schedule.",
+  "chips": [
+    "Max 100 per campaign",
+    "10 dataset ops per day",
+    "You approve before anything sends"
+  ],
+  "launchPrompt": "Collect everyone who replied to this post: [paste link]. Keep only the people who have DMs open (and only those who said [keyword], or drop that filter if I left it blank), then set up a DM campaign for my review with this message: [paste your message]. Keep the token [name] wherever their name should appear. If I say supporters only, read what each person wrote and keep only the genuinely supportive replies, and tell me how many were too unclear to judge.",
+  "sampleKind": "dmReview"
+}

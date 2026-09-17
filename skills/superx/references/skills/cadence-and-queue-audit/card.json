@@ -1,0 +1,22 @@
+{
+  "name": "Cadence & Queue Audit",
+  "category": "grow-plan",
+  "order": 30,
+  "subtitle": "Diagnose your posting rhythm and spot queue gaps and pile-ups.",
+  "summary": "Compares your scheduled queue against your recent posting history and performance, flags gaps and pile-ups, and proposes queue moves, one card per change.",
+  "howToAsk": [
+    "Audit my posting schedule",
+    "Is my queue healthy?",
+    "Am I posting too little?"
+  ],
+  "provide": "nothing.",
+  "get": "queue gaps and pile-ups, cadence verdict, proposed reschedules as approval cards.",
+  "chips": [
+    "No extra cost",
+    "Changes need your approval",
+    "Active account, up to 25 posts",
+    "Can't delete posts"
+  ],
+  "launchPrompt": "Check my scheduled posts and my recent posting cadence, tell me whether my rhythm is working, and propose reschedules if anything is stacked or missing.",
+  "sampleKind": "recap"
+}

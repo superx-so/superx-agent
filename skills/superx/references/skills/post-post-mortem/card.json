@@ -1,0 +1,20 @@
+{
+  "name": "Post Post-Mortem",
+  "category": "analytics-insights",
+  "order": 10,
+  "subtitle": "Why a post overperformed or flopped, in plain terms.",
+  "summary": "Pulls a post's impressions, likes, replies and reposts, compares them to your baseline, and explains the result through concrete growth levers (hook, format, timing), ending with what to repeat or avoid. No link needed: it can pick your most recent post that already has numbers.",
+  "howToAsk": [
+    "Why did this post do so well?",
+    "Why did this flop?"
+  ],
+  "provide": "nothing, or a specific post.",
+  "get": "the numbers vs your baseline and a lever-by-lever explanation.",
+  "chips": [
+    "No extra cost",
+    "Very fresh posts have no metrics yet"
+  ],
+  "launchPrompt": "Pick my most recent post that already has numbers and do a post-mortem on it: how it did against my baseline, why it performed that way, and what to repeat. If my analytics are still syncing, tell me and use my recent posts instead.",
+  "sampleKind": "recap",
+  "starter": true
+}

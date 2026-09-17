@@ -118,6 +118,7 @@ import {
   dmLimits,
 } from "./commands/dm";
 import { queueGet, queueSet } from "./commands/queue";
+import { skillsList, skillsInstall } from "./commands/skills";
 import { docs } from "./commands/docs";
 
 /** Wrap a handler: API errors go to stderr with the API's error code, exit 1. */
@@ -1959,6 +1960,43 @@ yargs(hideBin(process.argv))
     "Show the account's DM allowances and how much of each is used (free)",
     (y: Argv) => accountOption(y),
     run(dmLimits)
+  )
+  .command(
+    "skills:list",
+    "List the SuperX skills bundled with this package (no auth needed)",
+    (y: Argv) =>
+      y
+        .example("$0 skills:list", "Every skill's id, name and category as JSON")
+        .epilogue(
+          "Each skill's recipe is at <skills_dir>/<id>/recipe.md and its app card at card.json. Install the skill for your agent with skills:install."
+        ),
+    run(skillsList)
+  )
+  .command(
+    "skills:install",
+    "Install the bundled SuperX skill where your agent looks for skills",
+    (y: Argv) =>
+      y
+        .option("target", {
+          describe:
+            "Where to install: claude (~/.claude/skills), agents (~/.agents/skills), openclaw (~/.openclaw/skills), all. Default: claude + agents, plus openclaw when ~/.openclaw exists",
+          type: "string",
+          choices: ["claude", "agents", "openclaw", "all"],
+        })
+        .option("project", {
+          describe: "Install into the current directory (.claude/skills, .agents/skills, skills) instead of your home directory",
+          type: "boolean",
+        })
+        .option("copy", {
+          describe: "Copy the files instead of symlinking them (also the automatic fallback when a symlink is refused)",
+          type: "boolean",
+        })
+        .example("$0 skills:install", "Symlink the skill into ~/.claude/skills and ~/.agents/skills")
+        .example("$0 skills:install --project --copy", "Copy it into this repo for everyone working in it")
+        .epilogue(
+          "Re-running is safe: an install that already points at this package is left alone. Nothing runs on npm install; this command is the only thing that writes outside the package."
+        ),
+    run(skillsInstall)
   )
   .command("docs", "Print the SuperX API quickstart (markdown, no auth needed)", {}, run(docs))
   .demandCommand(1, "Specify a command. Run: superx --help")

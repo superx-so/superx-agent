@@ -1,0 +1,21 @@
+{
+  "name": "Trending Now Scan",
+  "category": "content-posting",
+  "order": 30,
+  "subtitle": "High-performing posts in your niche from the last 48 hours.",
+  "summary": "Searches high-performing posts from the last 48 hours in your topic and shows what your niche is posting about right now, with angles you could take while the conversation is live.",
+  "howToAsk": [
+    "What's trending in [niche] right now?",
+    "What's been landing in the last 48 hours?"
+  ],
+  "provide": "nothing, or 2-3 topic phrases.",
+  "get": "posts from the last 48 hours with their engagement numbers and suggested angles.",
+  "chips": [
+    "No extra cost",
+    "Last 48 hours"
+  ],
+  "launchPrompt": "Scan the last 48 hours for what's trending in my niche and suggest angles I could post about today. If you cannot tell what my niche is, ask me for two or three topic phrases first.",
+  "sampleKind": "recap",
+  "starter": true,
+  "starterGroup": "ideas"
+}

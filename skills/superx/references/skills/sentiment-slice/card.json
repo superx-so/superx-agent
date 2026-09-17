@@ -1,0 +1,20 @@
+{
+  "name": "Sentiment Slice",
+  "category": "audience-data",
+  "order": 20,
+  "subtitle": "Keep only the people who said what you're looking for.",
+  "summary": "Takes a dataset you've already collected and keeps the rows matching a criterion you describe in plain language (\"the skeptics\", \"asked about pricing\"), plus any it could not judge, flagged as unclear, as a new dataset. It only works on datasets whose rows carry text, like repliers and quoters, so an X list or a follower dataset cannot be sliced. The original is untouched.",
+  "howToAsk": [
+    "Keep only the [criterion] from my dataset",
+    "Pull out the people who asked about [topic]."
+  ],
+  "provide": "which dataset and the criterion.",
+  "get": "a new dataset of the matches, with honest matched and unclear counts.",
+  "chips": [
+    "Small AI cost, asked first",
+    "10 dataset ops per day",
+    "Needs a dataset with text"
+  ],
+  "launchPrompt": "Check my recent datasets, tell me which ones have what people actually wrote, then make a new dataset from the best fit keeping only the people who [your criterion].",
+  "sampleKind": "dataset"
+}

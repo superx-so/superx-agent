@@ -1,0 +1,21 @@
+{
+  "name": "Repurpose a Winner",
+  "category": "content-posting",
+  "order": 60,
+  "subtitle": "Your best post, reworked into fresh angles.",
+  "summary": "Takes one of your top performing standalone posts and rewrites it into new angles and formats (different hook, thread version, contrarian take) so a proven idea works for you more than once. Works on standalone posts, not threads.",
+  "howToAsk": [
+    "Repurpose my best post",
+    "Rework this post into new versions."
+  ],
+  "provide": "nothing, or a specific post.",
+  "get": "the original's numbers plus 2-3 fresh takes ready to edit and schedule.",
+  "chips": [
+    "No extra cost",
+    "Standalone posts only"
+  ],
+  "launchPrompt": "Find my best performing post from the last 30 days and rework it into 2-3 fresh versions with different hooks or formats. If my analytics are still syncing, use my recent posts instead.",
+  "sampleKind": "drafts",
+  "starter": true,
+  "starterGroup": "performance"
+}

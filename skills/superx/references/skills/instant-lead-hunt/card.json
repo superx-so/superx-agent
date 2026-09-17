@@ -1,0 +1,21 @@
+{
+  "name": "Instant Lead Hunt",
+  "category": "leads-prospecting",
+  "order": 20,
+  "subtitle": "Search X live for people matching the audience you describe, scored.",
+  "summary": "Runs a live search for people posting about your keywords right now, scores each against the audience you describe, and returns the best matches in chat with the post that surfaced them. Their current activity is not verified, so check the top few before you reach out.",
+  "howToAsk": [
+    "Find people complaining about [problem]",
+    "Find me leads talking about [topic]."
+  ],
+  "provide": "one sentence on what you sell, 2-3 keywords, and a one-line description of who you want to reach.",
+  "get": "up to 30 scored leads with the matching post, how recent it is, and the reasoning.",
+  "chips": [
+    "1+ AI credit per hunt",
+    "Counts toward daily lead searches",
+    "One-off search, saves nothing"
+  ],
+  "launchPrompt": "Run a live lead hunt: I sell [what you sell]. Find people posting about [your keywords] in the last [7 or 30] days, score them against [who you want to reach], and explain why each one matched.",
+  "sampleKind": "leads",
+  "starter": true
+}

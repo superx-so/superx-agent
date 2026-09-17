@@ -1,0 +1,21 @@
+{
+  "name": "Teach SuperX Your Rules",
+  "category": "setup-voice",
+  "order": 10,
+  "subtitle": "Set standing rules for your AI drafts.",
+  "summary": "Turns your preferences (\"never use emojis\", \"always British spelling\", \"no questions as hooks\") into a standing rule set for this account, up to 500 characters in total. Saving replaces the whole set rather than adding to it, so the card shows the complete text for you to approve first. Edit it any time at Account > Context.",
+  "howToAsk": [
+    "Remember that I never use emojis",
+    "Set a rule: no hashtags."
+  ],
+  "provide": "the rule in plain words.",
+  "get": "the full updated rule set on an approval card.",
+  "chips": [
+    "No extra cost",
+    "500 characters in total",
+    "Saving replaces the whole set"
+  ],
+  "launchPrompt": "I want to set standing rules for my AI drafts. Here's the first one: [your rule]",
+  "sampleKind": "recap",
+  "starter": true
+}

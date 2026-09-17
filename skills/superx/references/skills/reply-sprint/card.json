@@ -1,0 +1,20 @@
+{
+  "name": "Reply Sprint",
+  "category": "replies-engagement",
+  "order": 10,
+  "subtitle": "The replies your posts got, each with a ready-to-send draft.",
+  "summary": "Pulls the recent replies your posts received, picks up to 5 worth answering, and drafts a reply for each on its own send-ready card. If your posts have no replies yet, it says so instead of inventing any.",
+  "howToAsk": [
+    "Help me reply to my recent replies",
+    "Draft replies to the comments on my posts."
+  ],
+  "provide": "nothing; optionally how many.",
+  "get": "up to 5 recent replies with context and one drafted reply per card.",
+  "chips": [
+    "No extra cost",
+    "You send each reply"
+  ],
+  "launchPrompt": "Show the replies my posts got recently, pick up to 5 worth answering, and draft a reply for each one I can send.",
+  "sampleKind": "reply",
+  "starter": true
+}

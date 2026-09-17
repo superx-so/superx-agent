@@ -1,0 +1,21 @@
+{
+  "name": "Profile Research Briefs",
+  "category": "outreach-dms",
+  "order": 20,
+  "subtitle": "Structured briefs on any list of people, exportable as CSV.",
+  "summary": "Researches up to 25 people (a contact list, your signal-agent leads, a dataset you already collected, or pasted handles) into structured briefs: what they do, what they're building, recent topics, hooks quoting their real posts, and an opener angle. Saved as a dataset you can download.",
+  "howToAsk": [
+    "Research everyone in my [list] and give me a breakdown",
+    "Build briefs on these handles: ..."
+  ],
+  "provide": "the list, agent, dataset, or handles; optionally a research focus.",
+  "get": "briefs in chat plus a CSV/XLSX download.",
+  "chips": [
+    "1 credit per person, unresearched refunded",
+    "Max 25",
+    "Big runs finish in the background",
+    "10 background runs per day"
+  ],
+  "launchPrompt": "Research these people into outreach briefs with hooks from their real posts, then give me the export when it is done. Use these handles: [paste @handles], or my latest signal-agent leads if I have any. Tell me the credit cost before you start.",
+  "sampleKind": "dataset"
+}

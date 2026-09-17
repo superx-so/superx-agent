@@ -9,7 +9,6 @@
   "homepage": "https://docs.superx.so",
   "repository": "https://github.com/superx-so/superx-agent",
   "license": "MIT",
-  "skills": ["./"],
   "keywords": [
     "superx",
     "twitter",

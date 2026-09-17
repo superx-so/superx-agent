@@ -10,14 +10,14 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "start": "node ./dist/index.js",
-    "prepublishOnly": "npm run build"
+    "skills:build": "node scripts/skills.mjs build --server ../superx-server --docs ../superx-docs",
+    "skills:check": "node scripts/skills.mjs check --server ../superx-server --docs ../superx-docs",
+    "prepublishOnly": "npm run skills:check && npm run build"
   },
   "files": [
     "dist",
+    "skills",
     "README.md",
-    "SKILL.md",
-    "PLAYBOOK.md",
-    "PLAYBOOKS.md",
     "CHANGELOG.md",
     "LICENSE"
   ],

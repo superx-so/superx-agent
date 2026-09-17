@@ -1,0 +1,22 @@
+{
+  "name": "Weekly Growth Recap",
+  "category": "grow-plan",
+  "order": 10,
+  "subtitle": "Your week in review: wins, patterns, and next week's focus.",
+  "summary": "Pulls your follower trend, post performance, any new leads, and your latest audience replies, then writes a short recap of the week: what worked, one pattern to repeat, and a focus for next week. Purely a look back at what happened.",
+  "howToAsk": [
+    "Give me my weekly recap",
+    "How did this week go?",
+    "What worked for me this week?"
+  ],
+  "provide": "nothing (uses the active account).",
+  "get": "follower change, top posts with why they worked, lead count, one pattern, one next-week focus.",
+  "chips": [
+    "No extra cost",
+    "Reads your synced data"
+  ],
+  "launchPrompt": "Give me my weekly recap: follower trend, top posts and why they worked, any new leads, and one focus for next week.",
+  "sampleKind": "recap",
+  "starter": true,
+  "starterGroup": "performance"
+}

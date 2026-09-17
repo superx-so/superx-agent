@@ -1,0 +1,21 @@
+{
+  "name": "Your Warmest Leads",
+  "category": "leads-prospecting",
+  "order": 10,
+  "subtitle": "The people already engaging with you most, ready for a follow-up.",
+  "summary": "Ranks the people who replied to and reposted your posts over the last 90 days, up to 50 of them, so you can see who your real audience is and who is worth following up with first. Reads your own account data, nothing to fill in.",
+  "howToAsk": [
+    "Who engages with me the most?",
+    "Show me my warmest leads",
+    "Who should I follow up with?"
+  ],
+  "provide": "nothing (uses the active account).",
+  "get": "up to 50 top engagers ranked by replies and reposts, who they are, and who to follow up with first.",
+  "chips": [
+    "No extra cost",
+    "Last 90 days, up to 50 people"
+  ],
+  "launchPrompt": "Show me my warmest leads: the people who engaged with me most in the last 90 days, who they are, and which ones are worth a follow-up.",
+  "sampleKind": "leads",
+  "starter": true
+}

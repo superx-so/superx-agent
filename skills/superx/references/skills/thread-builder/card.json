@@ -1,0 +1,20 @@
+{
+  "name": "Thread Builder",
+  "category": "content-posting",
+  "order": 40,
+  "subtitle": "Turn an idea or rough notes into a thread ready to schedule.",
+  "summary": "Takes your raw material (a sentence, bullet notes, or a pasted draft) and builds a thread with a strong hook, tight parts, and a closer, then puts it on an approval card to edit and schedule.",
+  "howToAsk": [
+    "Turn this into a thread",
+    "Make a thread about [idea]."
+  ],
+  "provide": "the idea or notes; optionally target length.",
+  "get": "a full thread draft (up to 25 parts) ready to edit and schedule.",
+  "chips": [
+    "No extra cost",
+    "Scheduling needs your approval"
+  ],
+  "launchPrompt": "Turn this idea into a thread with a strong hook and put it on a card I can edit and schedule: [your idea]",
+  "sampleKind": "drafts",
+  "starter": true
+}

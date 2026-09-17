@@ -1,0 +1,20 @@
+{
+  "name": "Worker Output Review",
+  "category": "content-posting",
+  "order": 80,
+  "subtitle": "Triage the posts your Workers wrote while you were away.",
+  "summary": "Reads what your Workers have written and left in To review, shows each post exactly as it was written, and acts on your call: save the good ones as drafts, queue one for a time, clear the rest. Workers are created, edited and run in the SuperX app; this reviews what they produced.",
+  "howToAsk": [
+    "What did my Workers write?",
+    "Anything waiting for me in To review?"
+  ],
+  "provide": "nothing (uses the active account).",
+  "get": "each waiting post as written, with save, schedule or dismiss on every one.",
+  "chips": [
+    "No extra cost",
+    "Saved as the Worker wrote it",
+    "You approve every save"
+  ],
+  "launchPrompt": "Show me the posts my Workers have written and left waiting for review, one at a time and exactly as written, then let me save, schedule or dismiss each one.",
+  "sampleKind": "drafts"
+}

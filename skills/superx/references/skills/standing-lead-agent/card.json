@@ -1,0 +1,21 @@
+{
+  "name": "Standing Lead Agent",
+  "category": "leads-prospecting",
+  "order": 30,
+  "subtitle": "A lead-finding agent that keeps searching while you sleep.",
+  "summary": "Sets up a signal agent that watches X for your keywords around the clock and scores everyone it finds against the audience you describe. You edit and approve the agent before it exists, then its matches land in Signals over the following hours and days.",
+  "howToAsk": [
+    "Set up a lead agent for [niche]",
+    "Keep finding me people who [signal]."
+  ],
+  "provide": "keywords, a description of who you want to reach, optionally DMs-open only.",
+  "get": "an editable agent proposal card; leads flow into Signals afterwards.",
+  "chips": [
+    "No extra cost to set up",
+    "Needs your approval",
+    "Leads arrive over hours and days",
+    "Editing or pausing happens in Signals, not chat"
+  ],
+  "launchPrompt": "Set up a standing lead agent: watch for [your keywords], score everyone it finds against [who you want to reach], and show me the agent to approve before it starts.",
+  "sampleKind": "leads"
+}

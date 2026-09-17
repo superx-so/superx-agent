@@ -1,0 +1,20 @@
+{
+  "name": "My Replies Report",
+  "category": "replies-engagement",
+  "order": 30,
+  "subtitle": "Which of your replies actually earn attention.",
+  "summary": "Ranks your recent replies by performance and tells you which kinds of replies are worth your time. Reads up to 25 of your replies in chat.",
+  "howToAsk": [
+    "How are my replies performing?",
+    "Which replies worked?"
+  ],
+  "provide": "nothing.",
+  "get": "your best replies with numbers and a pattern read on what to do more.",
+  "chips": [
+    "No extra cost",
+    "Up to 25 replies in chat"
+  ],
+  "launchPrompt": "Review my sent replies, show the best performers, and tell me what pattern is working.",
+  "sampleKind": "recap",
+  "starter": true
+}

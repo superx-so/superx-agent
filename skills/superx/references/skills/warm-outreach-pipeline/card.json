@@ -1,0 +1,21 @@
+{
+  "name": "Warm Outreach Pipeline",
+  "category": "outreach-dms",
+  "order": 10,
+  "subtitle": "Research a list, get personalized DMs, approve every message before it queues.",
+  "summary": "The full outreach chain: reads a contact list, your signal-agent leads, or a dataset you already collected, researches each person's recent posts into a brief (1 credit per person, asked first, unresearched profiles refunded), writes one DM per person in your own format quoting something they actually posted, and opens a review card where you edit or skip every message before anything queues. Results come back as counts, never names.",
+  "howToAsk": [
+    "Warm up my [list] with personalized DMs",
+    "Research my leads and DM them in my style."
+  ],
+  "provide": "which list, agent, dataset, or handles, your DM format or an example, batch size (10-20 works best).",
+  "get": "per-person briefs, one personalized DM each, a review-and-approve card with day-by-day sending.",
+  "chips": [
+    "1 credit per person",
+    "Up to 25 researched per run",
+    "Max 100 recipients",
+    "You approve before anything queues"
+  ],
+  "launchPrompt": "Warm outreach: check my recent datasets and signal-agent leads, or use these handles if I have neither: [paste 5-10 handles]. Research the top 10 to 20 people, draft a personalized DM for each in the style of this example: [paste an example DM], and show me everything to review before anything is queued.",
+  "sampleKind": "dmReview"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Viral Format Remix",
+  "category": "content-posting",
+  "order": 20,
+  "subtitle": "Borrow proven hooks and structures from 50M+ real posts.",
+  "summary": "Searches a library of high-performing real posts in your topic, extracts the hooks and structures that made them work, and rewrites them in your voice on your subject. Reference posts are real, never fabricated.",
+  "howToAsk": [
+    "Find viral formats about [topic] and remix them for me",
+    "What hooks work for [niche]?"
+  ],
+  "provide": "nothing, or a topic to focus on.",
+  "get": "the reference posts, why each works, and remixed drafts in your voice.",
+  "chips": [
+    "3 AI credits per draft"
+  ],
+  "launchPrompt": "Find high-performing posts in my niche, show me why they work, and remix the best structures into drafts in my voice. If you cannot tell what my niche is, ask me for two or three topic phrases first.",
+  "sampleKind": "drafts",
+  "starter": true,
+  "starterGroup": "ideas"
+}

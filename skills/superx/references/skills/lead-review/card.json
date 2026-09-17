@@ -1,0 +1,20 @@
+{
+  "name": "Lead Review",
+  "category": "leads-prospecting",
+  "order": 40,
+  "subtitle": "The leads your agents found, prioritized, with the top few activity-checked.",
+  "summary": "Pulls the latest leads your signal agents deposited, explains why each matched, and live-checks the top few to confirm they're actually active before you spend time on them. If no agent has found anything yet, it tells you what to set up first.",
+  "howToAsk": [
+    "Show me my latest leads",
+    "Which of my leads are worth contacting first?"
+  ],
+  "provide": "nothing; optionally one agent.",
+  "get": "scored leads with match reasons, top candidates activity-checked, and your fit or not-fit verdicts recorded to train the scorer.",
+  "chips": [
+    "No extra cost",
+    "Needs a signal agent running",
+    "Activity check uses live lookups"
+  ],
+  "launchPrompt": "Check whether my signal agents have found any leads yet. If there are some, explain why each matched and verify the top 3 are still active before I reach out. If there are none, tell me what I need to set up first.",
+  "sampleKind": "leads"
+}

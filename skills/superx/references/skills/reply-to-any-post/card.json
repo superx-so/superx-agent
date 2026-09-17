@@ -1,0 +1,20 @@
+{
+  "name": "Reply to Any Post",
+  "category": "replies-engagement",
+  "order": 20,
+  "subtitle": "Paste any post, get the context and a strong reply.",
+  "summary": "Reads any public post live (author, engagement, and the top replies by likes so you don't repeat them), then drafts a reply that adds something the thread doesn't already have.",
+  "howToAsk": [
+    "Help me reply to this: [link]",
+    "Draft a reply to this post."
+  ],
+  "provide": "the post link.",
+  "get": "post context, what the top replies already said, one strong reply draft.",
+  "chips": [
+    "No extra cost",
+    "Live lookup",
+    "You send each reply"
+  ],
+  "launchPrompt": "Help me write a strong reply to this post (check what the top replies already said first): [paste link]",
+  "sampleKind": "reply"
+}

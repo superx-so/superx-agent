@@ -1,0 +1,21 @@
+{
+  "name": "Growth Plan Builder",
+  "category": "grow-plan",
+  "order": 20,
+  "subtitle": "A multi-week growth plan tied to your actual numbers.",
+  "summary": "Reads your account overview, post analytics, and reply activity from the last 90 days, then builds a plan for the weeks ahead: what to post, how often, who to reply to, and which format to repeat, scoped to the goal you name.",
+  "howToAsk": [
+    "Build me a growth plan",
+    "How do I get to 5k followers?",
+    "What should I change to grow faster?"
+  ],
+  "provide": "optionally a goal (followers, leads, launch date).",
+  "get": "a multi-week plan with a posting cadence, a reply target, and the format to repeat.",
+  "chips": [
+    "No extra cost",
+    "Uses your last 90 days"
+  ],
+  "launchPrompt": "Build me a growth plan: what to post, how often, who to reply to, and which format to repeat, based on my last 90 days. My goal is [followers, leads, or a launch date] if I have one.",
+  "sampleKind": "recap",
+  "starter": true
+}
