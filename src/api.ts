@@ -247,6 +247,11 @@ export class SuperXAPI {
     return (await this.request("/posts/viral-score", { method: "POST", body })).json;
   }
 
+  /** Sort recent public posts on a topic into Read, Pass or Not sure. */
+  async triage(body: unknown): Promise<any> {
+    return (await this.request("/posts/triage", { method: "POST", body })).json;
+  }
+
   /** Draft ONE reply to a post. Text only: a person posts it. */
   async draftReply(body: unknown): Promise<any> {
     return (await this.request("/engage/reply-draft", { method: "POST", body })).json;

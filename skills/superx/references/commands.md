@@ -372,6 +372,10 @@ superx tools:factcheck --text "X has 600M daily active users"
 # Score a draft against this account's own normal post, then improve it
 superx posts:viral-score --text "$(cat draft.txt)"
 superx posts:viral-score --text "$(cat draft-v2.txt)" --image
+
+# Sort what people are posting on a topic into Read, Pass or Not sure
+superx posts:triage "coding agents"
+superx posts:triage "indie SaaS" --days 7
 ```
 
 - **Every one of these returns TEXT and posts NOTHING.** `engage:reply-draft` writes a reply for a person to review and post; there is still no reply-sending command anywhere in the CLI. Show the draft, let the user edit it, and never say a reply went out.
@@ -381,7 +385,8 @@ superx posts:viral-score --text "$(cat draft-v2.txt)" --image
 - `tools:rephrase` presets: improve, grammar, translate, hook, details, clarity, engaging, humorous, positive, creative, sarcastic, inspirational, concise. The style ones write in the user's voice; grammar, translate, clarity, details and concise stay mechanical.
 - `tools:factcheck` reports `result` (true, false or unknown), a one-sentence `comment` and the `sources` it read. It is a model's reading of a couple of search results, NOT a guarantee: show the sources and never present the verdict as settled.
 - `posts:viral-score` scores ONE draft from 0 to 100 against the account's OWN recent posts, with `helped` / `hurt` in plain English and an expected multiple per counter (`reposts_and_quotes` and `views` come back `confidence: "low"`, so say so). It is not a reach prediction and it knows nothing about follower count. Rewrite what `hurt` names, score again, and stop when the score stops rising: three or four rounds is the useful range. NEVER chase the score with reply bait - anything in `warnings` (asking for replies, inviting people to connect, a borrowed template, sending readers off the platform) can only push a score DOWN, so a warning means change the post, not work around it. The baseline is the account's originals from the past 90 days, minus the last 3 days whose numbers are still settling; `baseline.kind: "population"` means fewer than 10 of those were usable and the draft was scored against the average training post instead.
-- Costs are measured AI credits: typically 1 each, and 2 for a remix or a reply draft. None of them spends a live X request except `engage:reply-draft --post`.
+- `posts:triage "<query>"` is the only one here that reads other people's posts: it searches recent public posts on a topic (`--days` 1-7, default 3) and sorts up to 40 of them into `lane` `read`, `unsure` or `pass`, each with `pct`, a `kind` (insight, story, data, progress, news, question, intro, launch, joke, opinion) and the `answers` behind the call. Quote a post's own answers when you say why it landed where it did, and never invent a reason. **`pct` is how CLEAR the call was, not how good the post is:** on `read` and `pass` it runs 50 to 99, so a `pass` at 99 means confidently NOT worth reading, and only on `unsure` is it the raw worth-reading score. Always say the lane with the number, never rank posts by `pct` across lanes, and never call a 90 a great post without checking the lane first. What is judged is the TEXT of a post and the model never sees who wrote it, so report it as a call on the writing, NOT as a rating of a person or an account. The search asks for original posts, English only, with a floor of 30 likes, and never returns replies or reposts: a small or brand-new topic can come back empty, which is an honest answer rather than a failure. The floor is what the search asks for, not a promise about `counts.likes`, so do not tell the user every post has 30+ likes. `posts_searched` says how many distinct posts the searches found before the 40-post cap. Nothing is posted, saved or sent.
+- Costs are measured AI credits: typically 1 each, 2 for a remix or a reply draft, and a flat 2 for a triage run. None of them spends a live X request except `engage:reply-draft --post` and `posts:triage`, which spends the searches it runs; both also carry a per-plan daily cap.
 
 ### Workers (posts written for you on a schedule)
 

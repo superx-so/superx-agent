@@ -4,7 +4,7 @@ import type { Argv } from "yargs";
 import { ApiError, note } from "./api";
 import { login, logout, status } from "./commands/auth";
 import { me, accounts } from "./commands/accounts";
-import { postsList, postsAnalytics, postsDraft, postsRemix, postsViralScore, repliesList, repliesReceived } from "./commands/posts";
+import { postsList, postsAnalytics, postsDraft, postsRemix, postsViralScore, postsTriage, repliesList, repliesReceived } from "./commands/posts";
 import {
   toolsInlineEdit,
   toolsRephrase,
@@ -426,6 +426,26 @@ yargs(hideBin(process.argv))
           "The score compares this draft with the account's OWN recent posts. It is not a reach prediction and it knows nothing about follower count. Rewrite and score again until the score stops rising, and read any warnings as a stop sign: asking for replies or sending readers off the platform can never raise it."
         ),
     run(postsViralScore)
+  )
+  .command(
+    "posts:triage <query>",
+    "Sort recent public posts on a topic into Read, Pass or Not sure (costs AI credits)",
+    (y: Argv) =>
+      accountOption(y)
+        .positional("query", {
+          describe: "Topic, phrase or search expression (2-80 characters)",
+          type: "string",
+        })
+        .option("days", {
+          describe: "How far back to search, 1 to 7 days (default 3)",
+          type: "number",
+        })
+        .example('$0 posts:triage "coding agents"', "What is worth reading on a topic today")
+        .example('$0 posts:triage "indie SaaS" --days 7', "The past week instead of the past three days")
+        .epilogue(
+          "Judges the TEXT of each post and never sees who wrote it, so read the result as a call on the writing rather than a rating of a person. Up to 40 posts a run, 2 credits, and each plan has a daily cap. Nothing is posted, saved or sent."
+        ),
+    run(postsTriage)
   )
   .command(
     "replies:list",

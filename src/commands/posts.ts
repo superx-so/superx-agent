@@ -144,3 +144,38 @@ export async function postsViralScore(argv: {
   const api = new SuperXAPI(getConfig());
   printJson(await api.viralScore(body));
 }
+
+/**
+ * Search recent public posts on a topic and sort them into Read, Pass or Not
+ * sure. What is judged is the text of a post, never who wrote it. Nothing is
+ * posted, saved or sent.
+ */
+export async function postsTriage(argv: {
+  query?: string;
+  days?: number;
+  account?: string;
+}): Promise<void> {
+  if (!argv.query || !argv.query.trim()) {
+    note('Provide a query: superx posts:triage "coding agents".');
+    process.exit(1);
+  }
+
+  // yargs turns a non-numeric --days into NaN, which JSON.stringify sends as
+  // null: the API would then quietly use its 3-day default instead of saying
+  // the flag was wrong. Refuse it here, the way the other guards in this file
+  // do, rather than in a yargs .check (this CLI's .fail rethrows those as an
+  // uncaught error with a stack trace).
+  if (argv.days !== undefined) {
+    if (!Number.isInteger(argv.days) || argv.days < 1 || argv.days > 7) {
+      note("--days must be a whole number of days between 1 and 7.");
+      process.exit(1);
+    }
+  }
+
+  const body: Record<string, unknown> = { query: argv.query };
+  if (argv.days !== undefined) body.max_age_days = argv.days;
+  if (argv.account) body.account_id = argv.account;
+
+  const api = new SuperXAPI(getConfig());
+  printJson(await api.triage(body));
+}
