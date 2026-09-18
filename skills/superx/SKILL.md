@@ -189,6 +189,7 @@ scoping are in [references/skills/README.md](./references/skills/README.md).
 
 ### Replies & Engagement
 - **Reply Sprint**: The replies your posts got, each with a ready-to-send draft. -> references/skills/reply-sprint/recipe.md
+- **Worth a Reply**: Let Jev read your niche and hand you the posts worth replying to today. -> references/skills/worth-a-reply/recipe.md
 - **Reply to Any Post**: Paste any post, get the context and a strong reply. -> references/skills/reply-to-any-post/recipe.md
 - **My Replies Report**: Which of your replies actually earn attention. -> references/skills/my-replies-report/recipe.md
 - **Who Is This Person?**: A fast read on any public account, plus your history with them. -> references/skills/who-is-this-person/recipe.md

@@ -1,0 +1,22 @@
+{
+  "name": "Worth a Reply",
+  "category": "replies-engagement",
+  "order": 15,
+  "subtitle": "Let Jev read your niche and hand you the posts worth replying to today.",
+  "summary": "Searches recent public posts on a topic and reads every one of them, then sorts them into three lanes: Read, the ones worth your time, Skim, the maybes, and Pass, which stays greyed out and is never listed unless you ask for it. The Read posts come back ordered by how much room there is to add something in a reply, each with its link, one line on why it is worth a reply and an angle you could take. It reads the words of a post and never who wrote it, so it is a call on the writing and not a rating of a person. Nothing is drafted or sent unless you ask.",
+  "howToAsk": [
+    "What should I reply to in AI agents today?",
+    "Find me 5 posts worth replying to about indie SaaS",
+    "Anything worth replying to on coding agents this week?"
+  ],
+  "provide": "a topic, and optionally how many days back (1 to 7).",
+  "get": "the posts worth a reply, each with a link, one line on why and an angle, then the Skim list.",
+  "chips": [
+    "2 credits on the API and CLI",
+    "Up to 40 posts",
+    "Judges the text, never the author",
+    "Nothing is sent"
+  ],
+  "launchPrompt": "Find me the posts worth replying to on a topic today. Search recent posts on it, sort them into Read, Skim and Pass, and show the Read posts first, ordered by how much room there is to add something in a reply: one post per line with its link, its kind, one line on why it is worth a reply and the angle a reply could take, all taken from that post's own answers and text. Then list Skim as short one-liners. Leave the Pass pile out unless I ask for it, and do not draft any replies until I pick one. Here is the topic: ",
+  "sampleKind": "recap"
+}
