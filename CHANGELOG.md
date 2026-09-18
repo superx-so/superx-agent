@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.1 (2026-09-18)
 
 - New skill Worth a Reply (worth-a-reply): `posts:triage` reads a topic, then the skill hands back the posts worth replying to, ordered by how much room there is to add something in a reply, each with its link, one line on why and the angle a reply could take. Skim posts come back as one-liners and the Pass pile stays out unless the person asks. It drafts nothing until they pick a post. Skills are now 32.
 
