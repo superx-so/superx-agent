@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 (2026-09-18)
 
 - `posts:triage "<query>"` searches recent public posts on a topic and sorts them into Read, Pass or Not sure, up to 40 posts a run. Every post comes back with its lane, a `pct`, a kind (insight, story, data, progress, news, question, intro, launch, joke or opinion) and the yes/no answers behind the call: specific and informative, says something new, engagement bait, a plug, a platitude, and room to add something in a reply. `pct` is how CLEAR the call was and not how good the post is: on `read` and `pass` it runs 50 to 99, so a `pass` at 99 is confidently not worth reading, and only on `unsure` is it the raw worth-reading score. Read it with the lane, never alone. `--days 1-7` sets how far back to look (default 3), `--account` attributes the run. What is judged is the TEXT of a post and never who wrote it, so it is a call on the writing, not a rating of a person. The search asks for original posts, English only, with a floor of 30 likes, and never returns replies or reposts. 2 credits a run, a daily cap per plan, and 1 live lookup for a single-word query or 2 for a multi-word one. Nothing is posted, saved or sent
 - MCP `triage_posts` does the same thing with the same fields. Reconnect the server to pick it up
